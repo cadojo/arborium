@@ -8,3 +8,8 @@ description = "Data structure for describing hardware; documented in the [Device
 wikipedia = "https://en.wikipedia.org/wiki/Devicetree"
 trivia = "Originated with Open Firmware (IEEE 1275-1994); the Flattened Device Tree format for Linux was introduced in 2005—see the [Devicetree spec](https://www.devicetree.org/specifications/)."
 
+[[samples]]
+path = "samples/decawave_dwm1001_dev.dts"
+description = "Zephyr board DTS describing SPI, UART, regulators, GPIOs, and sensors."
+link = "https://github.com/zephyrproject-rtos/zephyr/blob/main/boards/qorvo/decawave_dwm1001_dev/decawave_dwm1001_dev.dts"
+license = "Apache-2.0"

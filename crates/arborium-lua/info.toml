@@ -8,3 +8,8 @@ description = "Lightweight embeddable scripting language from PUC-Rio; official 
 wikipedia = "https://en.wikipedia.org/wiki/Lua_(programming_language)"
 trivia = "Lua (meaning 'moon' in Portuguese) succeeded SOL ('sun'); see the [history page](https://www.lua.org/history.html) and the 1993 technical report introducing Lua."
 
+[[samples]]
+path = "samples/utf8.lua"
+description = "Lua UTF-8 test exercising pattern matching, loops, and standard library calls."
+link = "https://github.com/lua/lua/blob/master/testes/utf8.lua"
+license = "MIT"

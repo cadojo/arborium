@@ -8,3 +8,8 @@ description = "OpenGL Shading Language for programmable GPUs; defined in the [Op
 wikipedia = "https://en.wikipedia.org/wiki/OpenGL_Shading_Language"
 trivia = "Introduced with OpenGL 2.0 to replace the fixed pipeline; the Khronos/ARB spec (e.g., version 4.60) is the authoritative reference."
 
+[[samples]]
+path = "samples/phong.frag"
+description = "Fragment shader from Vulkan samples using samplers, structs, and lighting calculations."
+link = "https://github.com/SaschaWillems/Vulkan/blob/master/shaders/glsl/offscreen/phong.frag"
+license = "MIT"

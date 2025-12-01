@@ -8,3 +8,8 @@ description = "Deterministic, hermetic build language used by Bazel/Buck2; spec 
 wikipedia = "https://en.wikipedia.org/wiki/Starlark"
 trivia = "Originally named Skylark (2015), renamed Starlark in 2018; deterministic semantics documented in the [spec](https://bazel.build/rules/language)."
 
+[[samples]]
+path = "samples/http.bzl"
+description = "Bazel repository rule definitions using load, attrs, functions, and repository_ctx."
+link = "https://github.com/bazelbuild/bazel/blob/master/tools/build_defs/repo/http.bzl"
+license = "Apache-2.0"

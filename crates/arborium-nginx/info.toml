@@ -8,3 +8,8 @@ description = "Configuration language for the nginx web server; official referen
 wikipedia = "https://en.wikipedia.org/wiki/Nginx"
 trivia = "Sysoev began nginx in 2002; first public release in 2004. The configuration syntax is documented in the [nginx docs](https://nginx.org/en/docs/)."
 
+[[samples]]
+path = "samples/nginx.conf"
+description = "H5BP nginx.conf with includes, gzip, SSL, maps, and logging directives."
+link = "https://github.com/h5bp/server-configs-nginx/blob/master/nginx.conf"
+license = "MIT"

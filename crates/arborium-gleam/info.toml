@@ -8,3 +8,8 @@ description = "Statically typed functional language for the BEAM; official docs 
 wikipedia = "https://en.wikipedia.org/wiki/Gleam_(programming_language)"
 trivia = "Pilfold announced Gleam in 2016 to bring ML-style typing to Erlang; version 1.0 shipped in March 2024 per the [Gleam 1.0 release notes](https://gleam.run/news/gleam-v1.0/)."
 
+[[samples]]
+path = "samples/router.gleam"
+description = "Echo server router with pattern matching, imports, and piped middleware in Gleam."
+link = "https://github.com/gleam-lang/example-echo-server/blob/main/src/reply/router.gleam"
+license = "Apache-2.0"

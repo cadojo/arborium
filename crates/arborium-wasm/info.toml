@@ -8,3 +8,8 @@ description = "WebAssembly binary instruction format; official spec at [webassem
 wikipedia = "https://en.wikipedia.org/wiki/WebAssembly"
 trivia = "Announced in 2015 by engineers from Mozilla, Google, Microsoft, and Apple; MVP shipped 2017 and reached W3C Recommendation in Dec 2019—see [W3C WebAssembly](https://www.w3.org/TR/wasm-core-1/)."
 
+[[samples]]
+path = "samples/br.wast"
+description = "WebAssembly spec test covering br instructions, labels, nested blocks, and validation."
+link = "https://github.com/WebAssembly/spec/blob/main/test/core/br.wast"
+license = "Apache-2.0"
