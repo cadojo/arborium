@@ -1,0 +1,13 @@
+[package]
+name = "xtask"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+tiny_http = "0.12"
+flate2 = "1"
+brotli = "7"
+indicatif = "0.17"
+owo-colors = "4"
+rayon = "1.10"

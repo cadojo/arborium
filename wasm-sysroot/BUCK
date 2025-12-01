@@ -1,0 +1,10 @@
+# Wasm sysroot stubs - provides libc function stubs for wasm32 builds
+
+cxx_library(
+    name = "wasm-stubs",
+    srcs = ["src/stdio.c"],
+    headers = glob(["*.h"]),
+    header_namespace = "",
+    exported_headers = glob(["*.h"]),
+    visibility = ["PUBLIC"],
+)

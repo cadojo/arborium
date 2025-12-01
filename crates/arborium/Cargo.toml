@@ -1,0 +1,466 @@
+[package]
+name = "arborium"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Tree-sitter syntax highlighting with HTML rendering and WASM support"
+keywords = ["tree-sitter", "syntax-highlighting", "wasm"]
+categories = ["parsing", "text-processing", "wasm"]
+links = "arborium"
+
+[features]
+default = []
+
+# WASM support with custom allocator
+wasm-fix = ["dep:dlmalloc"]
+
+# All languages (excluding idris which has build issues)
+all-languages = [
+    "lang-ada", "lang-agda", "lang-asm", "lang-awk",
+    "lang-bash", "lang-batch",
+    "lang-c", "lang-c-sharp", "lang-caddy", "lang-capnp", "lang-clojure", "lang-cmake", "lang-commonlisp", "lang-cpp", "lang-css",
+    "lang-d", "lang-dart", "lang-devicetree", "lang-diff", "lang-dockerfile", "lang-dot",
+    "lang-elisp", "lang-elixir", "lang-elm", "lang-erlang",
+    "lang-fish", "lang-fsharp",
+    "lang-gleam", "lang-glsl", "lang-go", "lang-graphql",
+    "lang-haskell", "lang-hcl", "lang-hlsl", "lang-html", "lang-hyprlang",
+    "lang-ini",
+    "lang-java", "lang-javascript", "lang-jinja2", "lang-jq", "lang-json", "lang-julia",
+    "lang-kdl",
+    "lang-lean", "lang-lua",
+    "lang-matlab", "lang-meson",
+    "lang-nginx", "lang-ninja", "lang-nix",
+    "lang-objc",
+    "lang-perl", "lang-php", "lang-python",
+    "lang-query",
+    "lang-r", "lang-ron", "lang-ruby", "lang-rust",
+    "lang-scala", "lang-scss", "lang-sparql", "lang-sql", "lang-ssh-config", "lang-starlark", "lang-svelte",
+    "lang-textproto", "lang-thrift", "lang-toml", "lang-typst",
+    "lang-uiua",
+    "lang-vb", "lang-verilog", "lang-vim", "lang-vue",
+    "lang-x86asm", "lang-xml",
+    "lang-yaml",
+    "lang-zig", "lang-zsh",
+]
+
+# Individual language features
+lang-ada = ["dep:arborium-ada"]
+lang-agda = ["dep:arborium-agda"]
+lang-asm = ["dep:arborium-asm"]
+lang-awk = ["dep:arborium-awk"]
+lang-bash = ["dep:arborium-bash"]
+lang-batch = ["dep:arborium-batch"]
+lang-c = ["dep:arborium-c"]
+lang-c-sharp = ["dep:arborium-c-sharp"]
+lang-caddy = ["dep:arborium-caddy"]
+lang-capnp = ["dep:arborium-capnp"]
+lang-clojure = ["dep:arborium-clojure"]
+lang-cmake = ["dep:arborium-cmake"]
+lang-commonlisp = ["dep:arborium-commonlisp"]
+lang-cpp = ["dep:arborium-cpp"]
+lang-css = ["dep:arborium-css"]
+lang-d = ["dep:arborium-d"]
+lang-dart = ["dep:arborium-dart"]
+lang-devicetree = ["dep:arborium-devicetree"]
+lang-diff = ["dep:arborium-diff"]
+lang-dockerfile = ["dep:arborium-dockerfile"]
+lang-dot = ["dep:arborium-dot"]
+lang-elisp = ["dep:arborium-elisp"]
+lang-elixir = ["dep:arborium-elixir"]
+lang-elm = ["dep:arborium-elm"]
+lang-erlang = ["dep:arborium-erlang"]
+lang-fish = ["dep:arborium-fish"]
+lang-fsharp = ["dep:arborium-fsharp"]
+lang-gleam = ["dep:arborium-gleam"]
+lang-glsl = ["dep:arborium-glsl"]
+lang-go = ["dep:arborium-go"]
+lang-graphql = ["dep:arborium-graphql"]
+lang-haskell = ["dep:arborium-haskell"]
+lang-hcl = ["dep:arborium-hcl"]
+lang-hlsl = ["dep:arborium-hlsl"]
+lang-html = ["dep:arborium-html"]
+lang-hyprlang = ["dep:arborium-hyprlang"]
+lang-idris = ["dep:arborium-idris"]
+lang-ini = ["dep:arborium-ini"]
+lang-java = ["dep:arborium-java"]
+lang-javascript = ["dep:arborium-javascript"]
+lang-jinja2 = ["dep:arborium-jinja2"]
+lang-jq = ["dep:arborium-jq"]
+lang-json = ["dep:arborium-json"]
+lang-julia = ["dep:arborium-julia"]
+lang-kdl = ["dep:arborium-kdl"]
+lang-lean = ["dep:arborium-lean"]
+lang-lua = ["dep:arborium-lua"]
+lang-matlab = ["dep:arborium-matlab"]
+lang-meson = ["dep:arborium-meson"]
+lang-nginx = ["dep:arborium-nginx"]
+lang-ninja = ["dep:arborium-ninja"]
+lang-nix = ["dep:arborium-nix"]
+lang-objc = ["dep:arborium-objc"]
+lang-perl = ["dep:arborium-perl"]
+lang-php = ["dep:arborium-php"]
+lang-python = ["dep:arborium-python"]
+lang-query = ["dep:arborium-query"]
+lang-r = ["dep:arborium-r"]
+lang-ron = ["dep:arborium-ron"]
+lang-ruby = ["dep:arborium-ruby"]
+lang-rust = ["dep:arborium-rust"]
+lang-scala = ["dep:arborium-scala"]
+lang-scss = ["dep:arborium-scss"]
+lang-sparql = ["dep:arborium-sparql"]
+lang-sql = ["dep:arborium-sql"]
+lang-ssh-config = ["dep:arborium-ssh-config"]
+lang-starlark = ["dep:arborium-starlark"]
+lang-svelte = ["dep:arborium-svelte"]
+lang-textproto = ["dep:arborium-textproto"]
+lang-thrift = ["dep:arborium-thrift"]
+lang-toml = ["dep:arborium-toml"]
+lang-typst = ["dep:arborium-typst"]
+lang-uiua = ["dep:arborium-uiua"]
+lang-vb = ["dep:arborium-vb"]
+lang-verilog = ["dep:arborium-verilog"]
+lang-vim = ["dep:arborium-vim"]
+lang-vue = ["dep:arborium-vue"]
+lang-x86asm = ["dep:arborium-x86asm"]
+lang-xml = ["dep:arborium-xml"]
+lang-yaml = ["dep:arborium-yaml"]
+lang-zig = ["dep:arborium-zig"]
+lang-zsh = ["dep:arborium-zsh"]
+
+[dependencies]
+tree-sitter-patched-arborium = { version = "0.25.10", path = "../../tree-sitter" }
+tree-sitter-highlight-patched-arborium = { version = "0.25.10", path = "../../tree-sitter-highlight" }
+
+# WASM allocator (only for wasm-fix feature on wasm targets)
+[target.'cfg(target_family = "wasm")'.dependencies]
+dlmalloc = { version = "0.2", optional = true }
+
+# Optional grammar dependencies
+[dependencies.arborium-ada]
+path = "../arborium-ada"
+optional = true
+
+[dependencies.arborium-agda]
+path = "../arborium-agda"
+optional = true
+
+[dependencies.arborium-asm]
+path = "../arborium-asm"
+optional = true
+
+[dependencies.arborium-awk]
+path = "../arborium-awk"
+optional = true
+
+[dependencies.arborium-bash]
+path = "../arborium-bash"
+optional = true
+
+[dependencies.arborium-batch]
+path = "../arborium-batch"
+optional = true
+
+[dependencies.arborium-c]
+path = "../arborium-c"
+optional = true
+
+[dependencies.arborium-c-sharp]
+path = "../arborium-c-sharp"
+optional = true
+
+[dependencies.arborium-caddy]
+path = "../arborium-caddy"
+optional = true
+
+[dependencies.arborium-capnp]
+path = "../arborium-capnp"
+optional = true
+
+[dependencies.arborium-clojure]
+path = "../arborium-clojure"
+optional = true
+
+[dependencies.arborium-cmake]
+path = "../arborium-cmake"
+optional = true
+
+[dependencies.arborium-commonlisp]
+path = "../arborium-commonlisp"
+optional = true
+
+[dependencies.arborium-cpp]
+path = "../arborium-cpp"
+optional = true
+
+[dependencies.arborium-css]
+path = "../arborium-css"
+optional = true
+
+[dependencies.arborium-d]
+path = "../arborium-d"
+optional = true
+
+[dependencies.arborium-dart]
+path = "../arborium-dart"
+optional = true
+
+[dependencies.arborium-devicetree]
+path = "../arborium-devicetree"
+optional = true
+
+[dependencies.arborium-diff]
+path = "../arborium-diff"
+optional = true
+
+[dependencies.arborium-dockerfile]
+path = "../arborium-dockerfile"
+optional = true
+
+[dependencies.arborium-dot]
+path = "../arborium-dot"
+optional = true
+
+[dependencies.arborium-elisp]
+path = "../arborium-elisp"
+optional = true
+
+[dependencies.arborium-elixir]
+path = "../arborium-elixir"
+optional = true
+
+[dependencies.arborium-elm]
+path = "../arborium-elm"
+optional = true
+
+[dependencies.arborium-erlang]
+path = "../arborium-erlang"
+optional = true
+
+[dependencies.arborium-fish]
+path = "../arborium-fish"
+optional = true
+
+[dependencies.arborium-fsharp]
+path = "../arborium-fsharp"
+optional = true
+
+[dependencies.arborium-gleam]
+path = "../arborium-gleam"
+optional = true
+
+[dependencies.arborium-glsl]
+path = "../arborium-glsl"
+optional = true
+
+[dependencies.arborium-go]
+path = "../arborium-go"
+optional = true
+
+[dependencies.arborium-graphql]
+path = "../arborium-graphql"
+optional = true
+
+[dependencies.arborium-haskell]
+path = "../arborium-haskell"
+optional = true
+
+[dependencies.arborium-hcl]
+path = "../arborium-hcl"
+optional = true
+
+[dependencies.arborium-hlsl]
+path = "../arborium-hlsl"
+optional = true
+
+[dependencies.arborium-html]
+path = "../arborium-html"
+optional = true
+
+[dependencies.arborium-hyprlang]
+path = "../arborium-hyprlang"
+optional = true
+
+[dependencies.arborium-idris]
+path = "../arborium-idris"
+optional = true
+
+[dependencies.arborium-ini]
+path = "../arborium-ini"
+optional = true
+
+[dependencies.arborium-java]
+path = "../arborium-java"
+optional = true
+
+[dependencies.arborium-javascript]
+path = "../arborium-javascript"
+optional = true
+
+[dependencies.arborium-jinja2]
+path = "../arborium-jinja2"
+optional = true
+
+[dependencies.arborium-jq]
+path = "../arborium-jq"
+optional = true
+
+[dependencies.arborium-json]
+path = "../arborium-json"
+optional = true
+
+[dependencies.arborium-julia]
+path = "../arborium-julia"
+optional = true
+
+[dependencies.arborium-kdl]
+path = "../arborium-kdl"
+optional = true
+
+[dependencies.arborium-lean]
+path = "../arborium-lean"
+optional = true
+
+[dependencies.arborium-lua]
+path = "../arborium-lua"
+optional = true
+
+[dependencies.arborium-matlab]
+path = "../arborium-matlab"
+optional = true
+
+[dependencies.arborium-meson]
+path = "../arborium-meson"
+optional = true
+
+[dependencies.arborium-nginx]
+path = "../arborium-nginx"
+optional = true
+
+[dependencies.arborium-ninja]
+path = "../arborium-ninja"
+optional = true
+
+[dependencies.arborium-nix]
+path = "../arborium-nix"
+optional = true
+
+[dependencies.arborium-objc]
+path = "../arborium-objc"
+optional = true
+
+[dependencies.arborium-perl]
+path = "../arborium-perl"
+optional = true
+
+[dependencies.arborium-php]
+path = "../arborium-php"
+optional = true
+
+[dependencies.arborium-python]
+path = "../arborium-python"
+optional = true
+
+[dependencies.arborium-query]
+path = "../arborium-query"
+optional = true
+
+[dependencies.arborium-r]
+path = "../arborium-r"
+optional = true
+
+[dependencies.arborium-ron]
+path = "../arborium-ron"
+optional = true
+
+[dependencies.arborium-ruby]
+path = "../arborium-ruby"
+optional = true
+
+[dependencies.arborium-rust]
+path = "../arborium-rust"
+optional = true
+
+[dependencies.arborium-scala]
+path = "../arborium-scala"
+optional = true
+
+[dependencies.arborium-scss]
+path = "../arborium-scss"
+optional = true
+
+[dependencies.arborium-sparql]
+path = "../arborium-sparql"
+optional = true
+
+[dependencies.arborium-sql]
+path = "../arborium-sql"
+optional = true
+
+[dependencies.arborium-ssh-config]
+path = "../arborium-ssh-config"
+optional = true
+
+[dependencies.arborium-starlark]
+path = "../arborium-starlark"
+optional = true
+
+[dependencies.arborium-svelte]
+path = "../arborium-svelte"
+optional = true
+
+[dependencies.arborium-textproto]
+path = "../arborium-textproto"
+optional = true
+
+[dependencies.arborium-thrift]
+path = "../arborium-thrift"
+optional = true
+
+[dependencies.arborium-toml]
+path = "../arborium-toml"
+optional = true
+
+[dependencies.arborium-typst]
+path = "../arborium-typst"
+optional = true
+
+[dependencies.arborium-uiua]
+path = "../arborium-uiua"
+optional = true
+
+[dependencies.arborium-vb]
+path = "../arborium-vb"
+optional = true
+
+[dependencies.arborium-verilog]
+path = "../arborium-verilog"
+optional = true
+
+[dependencies.arborium-vim]
+path = "../arborium-vim"
+optional = true
+
+[dependencies.arborium-vue]
+path = "../arborium-vue"
+optional = true
+
+[dependencies.arborium-x86asm]
+path = "../arborium-x86asm"
+optional = true
+
+[dependencies.arborium-xml]
+path = "../arborium-xml"
+optional = true
+
+[dependencies.arborium-yaml]
+path = "../arborium-yaml"
+optional = true
+
+[dependencies.arborium-zig]
+path = "../arborium-zig"
+optional = true
+
+[dependencies.arborium-zsh]
+path = "../arborium-zsh"
+optional = true

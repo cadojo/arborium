@@ -1,0 +1,34 @@
+//! DIFF grammar for tree-sitter
+//!
+//! This crate provides the diff language grammar for use with tree-sitter.
+
+use tree_sitter_patched_arborium::Language;
+
+unsafe extern "C" {
+    fn tree_sitter_diff() -> Language;
+}
+
+/// Returns the diff tree-sitter language.
+pub fn language() -> Language {
+    unsafe { tree_sitter_diff() }
+}
+
+/// The highlight query for diff.
+pub const HIGHLIGHTS_QUERY: &str = include_str!("../../../tree-sitter-diff/queries/highlights.scm");
+
+/// The injections query for diff (empty - no injections available).
+pub const INJECTIONS_QUERY: &str = "";
+
+/// The locals query for diff (empty - no locals available).
+pub const LOCALS_QUERY: &str = "";
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_language() {
+        let lang = language();
+        assert!(lang.version() > 0);
+    }
+}

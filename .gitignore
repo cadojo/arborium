@@ -1,0 +1,15 @@
+/target
+
+# Node modules (created during grammar regeneration)
+node_modules/
+**/node_modules/
+
+# Tree-sitter generated files (anywhere)
+**/src/parser.c
+**/src/grammar.json
+**/src/node-types.json
+**/src/tree_sitter/
+
+# Pre-compressed demo files
+demo/*.br
+demo/*.gz
