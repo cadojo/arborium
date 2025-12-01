@@ -17,6 +17,17 @@
     "description": "A dependently typed functional programming language and proof assistant.",
     "wikipedia": "https://en.wikipedia.org/wiki/Agda_(programming_language)"
   },
+  "asciidoc": {
+    "name": "AsciiDoc",
+    "tag": "markup",
+    "icon": "simple-icons:asciidoctor",
+    "aliases": ["adoc"],
+    "inventor": "Stuart Rackham",
+    "year": 2002,
+    "description": "A text document format for writing notes, documentation, articles, and books.",
+    "wikipedia": "https://en.wikipedia.org/wiki/AsciiDoc",
+    "trivia": "AsciiDoc was designed to be a plain-text alternative to DocBook XML, particularly popular for technical documentation."
+  },
   "asm": {
     "name": "Assembly",
     "tag": "code",
@@ -341,11 +352,6 @@
     "wikipedia": "https://en.wikipedia.org/wiki/HTML",
     "trivia": "Tim Berners-Lee invented HTML while working at CERN to share documents."
   },
-  "hyprlang": {
-    "name": "Hyprlang",
-    "tag": "config",
-    "description": "Configuration language for Hyprland, a dynamic tiling Wayland compositor."
-  },
   "idris": {
     "name": "Idris",
     "tag": "code",
@@ -439,17 +445,6 @@
     "description": "The KDL Document Language, a document language with xml-like semantics.",
     "trivia": "KDL stands for 'Cuddly Document Language' (pronounced 'cuddle')."
   },
-  "kotlin": {
-    "name": "Kotlin",
-    "tag": "code",
-    "icon": "devicon-plain:kotlin",
-    "aliases": ["kt", "kts"],
-    "inventor": "JetBrains",
-    "year": 2011,
-    "description": "A modern programming language that runs on the JVM, official for Android development.",
-    "wikipedia": "https://en.wikipedia.org/wiki/Kotlin_(programming_language)",
-    "trivia": "Named after Kotlin Island near St. Petersburg, where the JetBrains team is based."
-  },
   "lean": {
     "name": "Lean",
     "tag": "code",
@@ -540,17 +535,6 @@
     "wikipedia": "https://en.wikipedia.org/wiki/Objective-C",
     "trivia": "Objective-C was the main language for Apple development before Swift."
   },
-  "ocaml": {
-    "name": "OCaml",
-    "tag": "code",
-    "icon": "devicon-plain:ocaml",
-    "aliases": ["ml"],
-    "inventor": "Xavier Leroy, Jérôme Vouillon, Damien Doligez, Didier Rémy",
-    "year": 1996,
-    "description": "A multi-paradigm language with emphasis on functional programming.",
-    "wikipedia": "https://en.wikipedia.org/wiki/OCaml",
-    "trivia": "The 'O' in OCaml stands for 'Objective'. It was called Objective Caml before 2011."
-  },
   "perl": {
     "name": "Perl",
     "tag": "code",
@@ -571,6 +555,39 @@
     "description": "A popular general-purpose scripting language suited for web development.",
     "wikipedia": "https://en.wikipedia.org/wiki/PHP",
     "trivia": "PHP originally stood for 'Personal Home Page', now 'PHP: Hypertext Preprocessor'."
+  },
+  "postscript": {
+    "name": "PostScript",
+    "tag": "code",
+    "icon": "mdi:printer",
+    "aliases": ["ps"],
+    "inventor": "John Warnock, Charles Geschke",
+    "year": 1984,
+    "description": "Page description language and programming language for desktop publishing and printing.",
+    "wikipedia": "https://en.wikipedia.org/wiki/PostScript",
+    "trivia": "PostScript was created at Adobe Systems and sparked the desktop publishing revolution with the 1985 Apple LaserWriter."
+  },
+  "powershell": {
+    "name": "PowerShell",
+    "tag": "shell",
+    "icon": "simple-icons:powershell",
+    "aliases": ["ps1", "psm1"],
+    "inventor": "Jeffrey Snover",
+    "year": 2006,
+    "description": "Task automation and configuration management framework with command-line shell and scripting language.",
+    "wikipedia": "https://en.wikipedia.org/wiki/PowerShell",
+    "trivia": "PowerShell was born from Jeffrey Snover's 2002 'Monad Manifesto'. Microsoft made it open-source and cross-platform in 2016."
+  },
+  "prolog": {
+    "name": "Prolog",
+    "tag": "code",
+    "icon": "mdi:head-question-outline",
+    "aliases": ["pl"],
+    "inventor": "Alain Colmerauer, Philippe Roussel",
+    "year": 1972,
+    "description": "Logic programming language for artificial intelligence and computational linguistics.",
+    "wikipedia": "https://en.wikipedia.org/wiki/Prolog",
+    "trivia": "Prolog was developed in Marseille to process natural French language. The name is short for 'PROgrammation en LOGique'."
   },
   "python": {
     "name": "Python",
@@ -602,6 +619,15 @@
     "description": "A language and environment for statistical computing and graphics.",
     "wikipedia": "https://en.wikipedia.org/wiki/R_(programming_language)",
     "trivia": "R is named partly after the first names of its creators (Ross and Robert)."
+  },
+  "rescript": {
+    "name": "ReScript",
+    "tag": "code",
+    "icon": "simple-icons:rescript",
+    "aliases": ["res", "resi"],
+    "year": 2020,
+    "description": "A robustly typed language that compiles to efficient and human-readable JavaScript.",
+    "trivia": "ReScript evolved from BuckleScript, bringing OCaml's type system to JavaScript with a friendlier syntax."
   },
   "ron": {
     "name": "RON",
@@ -702,16 +728,6 @@
     "wikipedia": "https://en.wikipedia.org/wiki/Svelte",
     "trivia": "Unlike React or Vue, Svelte has no virtual DOM - it compiles to direct DOM manipulation."
   },
-  "swift": {
-    "name": "Swift",
-    "tag": "code",
-    "icon": "devicon-plain:swift",
-    "inventor": "Chris Lattner",
-    "year": 2014,
-    "description": "A powerful and intuitive language for Apple platforms.",
-    "wikipedia": "https://en.wikipedia.org/wiki/Swift_(programming_language)",
-    "trivia": "Chris Lattner started Swift as a personal project in 2010, it became Apple's main language."
-  },
   "textproto": {
     "name": "Text Proto",
     "tag": "data",
@@ -729,6 +745,17 @@
     "wikipedia": "https://en.wikipedia.org/wiki/Apache_Thrift",
     "trivia": "Developed at Facebook and later donated to the Apache Software Foundation."
   },
+  "tlaplus": {
+    "name": "TLA+",
+    "tag": "code",
+    "icon": "mdi:math-integral-box",
+    "aliases": ["tla"],
+    "inventor": "Leslie Lamport",
+    "year": 1999,
+    "description": "A formal specification language for designing and verifying concurrent and distributed systems.",
+    "wikipedia": "https://en.wikipedia.org/wiki/TLA%2B",
+    "trivia": "TLA+ stands for 'Temporal Logic of Actions'. It's used by Amazon to verify AWS services and by Microsoft for Azure."
+  },
   "toml": {
     "name": "TOML",
     "tag": "config",
@@ -739,11 +766,18 @@
     "wikipedia": "https://en.wikipedia.org/wiki/TOML",
     "trivia": "TOML is named after its creator, Tom Preston-Werner (GitHub co-founder)."
   },
+  "tsx": {
+    "name": "TSX",
+    "tag": "code",
+    "icon": "devicon-plain:react",
+    "description": "TypeScript with JSX syntax for React components.",
+    "trivia": "TSX combines TypeScript's type safety with JSX's declarative UI syntax, making it popular for React development."
+  },
   "typescript": {
     "name": "TypeScript",
     "tag": "code",
     "icon": "devicon-plain:typescript",
-    "aliases": ["ts", "tsx", "mts", "cts"],
+    "aliases": ["ts", "mts", "cts"],
     "inventor": "Anders Hejlsberg",
     "year": 2012,
     "description": "A typed superset of JavaScript that compiles to plain JavaScript.",
@@ -789,6 +823,16 @@
     "description": "A hardware description language used in electronic design automation.",
     "wikipedia": "https://en.wikipedia.org/wiki/Verilog",
     "trivia": "Verilog was originally a proprietary language before becoming an IEEE standard."
+  },
+  "vhdl": {
+    "name": "VHDL",
+    "tag": "code",
+    "icon": "mdi:chip",
+    "inventor": "U.S. Department of Defense",
+    "year": 1987,
+    "description": "A hardware description language used in electronic design automation for digital circuits.",
+    "wikipedia": "https://en.wikipedia.org/wiki/VHDL",
+    "trivia": "VHDL stands for 'VHSIC Hardware Description Language' where VHSIC means 'Very High Speed Integrated Circuit'."
   },
   "vim": {
     "name": "Vim Script",
@@ -839,6 +883,13 @@
     "description": "A human-friendly data serialization standard.",
     "wikipedia": "https://en.wikipedia.org/wiki/YAML",
     "trivia": "YAML originally stood for 'Yet Another Markup Language', now 'YAML Ain't Markup Language'."
+  },
+  "yuri": {
+    "name": "Yuri",
+    "tag": "data",
+    "icon": "mdi:link-variant",
+    "description": "A data format for representing URIs and URL templates in a structured way.",
+    "trivia": "Yuri is designed for configuration files that need to handle URL patterns and templates."
   },
   "zig": {
     "name": "Zig",
