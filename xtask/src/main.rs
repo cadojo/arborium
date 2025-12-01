@@ -1076,9 +1076,9 @@ fn vendor_grammar(name: &str) {
                     let line = line.trim();
                     if line.starts_with("subdir") {
                         if let Some(value) = line.split('=').nth(1) {
+                            // Strip inline comments first, then trim whitespace and quotes
+                            let value = value.split('#').next().unwrap_or(value);
                             let value = value.trim().trim_matches('"').trim_matches('\'');
-                            // Strip inline comments
-                            let value = value.split('#').next().unwrap_or(value).trim();
                             if !value.is_empty() {
                                 return Some(value.to_string());
                             }
@@ -1099,9 +1099,18 @@ fn vendor_grammar(name: &str) {
     };
 
     // Copy grammar.js
+    // For multi-grammar repos, fix import paths (e.g., ../common/ -> ./common/)
     let grammar_js = grammar_source_dir.join("grammar.js");
     if grammar_js.exists() {
-        fs::copy(&grammar_js, target_dir.join("grammar.js")).expect("Failed to copy grammar.js");
+        if subdir.is_some() {
+            // Fix import paths when copying from subdir
+            let content = fs::read_to_string(&grammar_js).expect("Failed to read grammar.js");
+            let fixed = content.replace("'../common/", "'./common/")
+                              .replace("\"../common/", "\"./common/");
+            fs::write(target_dir.join("grammar.js"), fixed).expect("Failed to write grammar.js");
+        } else {
+            fs::copy(&grammar_js, target_dir.join("grammar.js")).expect("Failed to copy grammar.js");
+        }
     }
 
     // Copy package.json if it exists (some grammars have npm dependencies)
