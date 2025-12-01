@@ -9,7 +9,7 @@ wikipedia = "https://en.wikipedia.org/wiki/Clojure"
 trivia = "Hickey designed Clojure to simplify concurrent programming; the language was announced publicly in 2007 and documented in the [original release notes](https://clojure.org/releases/downloads)."
 
 [[samples]]
-path = "sample.clj"
-description = ""
-link = ""
-license = ""
+path = "samples/params.clj"
+description = "Ring middleware for parsing params and multipart requests; showcases namespaces, metadata, higher-order functions."
+link = "https://github.com/ring-clojure/ring/blob/master/ring-core/src/ring/middleware/params.clj"
+license = "MIT"

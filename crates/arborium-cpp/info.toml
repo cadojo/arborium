@@ -9,7 +9,7 @@ wikipedia = "https://en.wikipedia.org/wiki/C%2B%2B"
 trivia = "Began as 'C with Classes' in 1979 and was renamed C++ (using the C increment operator) in 1983; Stroustrup recounts the history in ["The Design and Evolution of C++" excerpts](https://www.stroustrup.com/dne.html)."
 
 [[samples]]
-path = "sample.cpp"
-description = ""
-link = ""
-license = ""
+path = "samples/chrono-test.cc"
+description = "fmtlib chrono tests with templates, user-defined literals, chrono formatting, and GoogleTest macros."
+link = "https://github.com/fmtlib/fmt/blob/master/test/chrono-test.cc"
+license = "MIT"

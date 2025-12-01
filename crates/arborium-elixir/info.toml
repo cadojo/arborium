@@ -9,7 +9,7 @@ wikipedia = "https://en.wikipedia.org/wiki/Elixir_(programming_language)"
 trivia = "Valim announced Elixir in 2011 to blend Ruby-like ergonomics with Erlang's fault-tolerance; see the [Elixir getting started guide](https://elixir-lang.org/getting-started/introduction.html) and the original [announcement post](https://elixir-lang.org/blog/2011/01/09/introducing-elixir/)."
 
 [[samples]]
-path = "sample.ex"
-description = ""
-link = ""
-license = ""
+path = "samples/controller.ex"
+description = "Phoenix controller module with plugs, alias/import/use macros, pattern matching, and response helpers."
+link = "https://github.com/phoenixframework/phoenix/blob/master/lib/phoenix/controller.ex"
+license = "MIT"

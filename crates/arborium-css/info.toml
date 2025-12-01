@@ -9,7 +9,7 @@ wikipedia = "https://en.wikipedia.org/wiki/CSS"
 trivia = "Wium Lie proposed CSS on 10 Oct 1994 while at CERN and it became a W3C Recommendation in 1996; see his original [proposal memo](https://www.w3.org/People/howcome/p/Spec/) and the [CSS1 recommendation](https://www.w3.org/TR/REC-CSS1-961217)."
 
 [[samples]]
-path = "sample.css"
-description = ""
-link = ""
-license = ""
+path = "samples/modern-normalize.css"
+description = "modern-normalize.css resetting HTML elements with selectors, pseudo-classes, and font settings."
+link = "https://github.com/sindresorhus/modern-normalize/blob/main/modern-normalize.css"
+license = "MIT"

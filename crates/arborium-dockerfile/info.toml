@@ -9,7 +9,7 @@ wikipedia = "https://docs.docker.com/engine/reference/builder/"
 trivia = "Introduced with Docker's first public release in 2013; the reference documents each instruction and the layer-caching model that made Docker adoption explode ([Dockerfile reference](https://docs.docker.com/engine/reference/builder/))."
 
 [[samples]]
-path = "sample.dockerfile"
-description = ""
-link = ""
-license = ""
+path = "samples/devcontainer-node.Dockerfile"
+description = "VS Code devcontainer for Node.js with Debian base, build args, apt installs, non-root user setup, zsh defaults."
+link = "https://github.com/microsoft/vscode-dev-containers/blob/main/containers/javascript-node/.devcontainer/Dockerfile"
+license = "MIT"
