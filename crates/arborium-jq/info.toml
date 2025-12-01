@@ -13,3 +13,10 @@ path = "samples/jq.test"
 description = "jq upstream test suite covering filters, arithmetic, strings, arrays, and objects."
 link = "https://github.com/stedolan/jq/blob/master/tests/jq.test"
 license = "MIT"
+
+# amos-picked sample
+[[samples]]
+path = "samples/geo.jq"
+description = "Geo helper functions from zulip-bots (ADSB), using modules, defs, math, and filtering."
+link = "https://github.com/tianon/zulip-bots/blob/f031597401d1014bc9ba1f9c120f5fcd0f5e374c/adsb/geo.jq"
+license = "MIT"
