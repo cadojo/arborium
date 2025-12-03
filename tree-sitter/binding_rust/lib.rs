@@ -1,6 +1,11 @@
 #![doc = include_str!("./README.md")]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+// Allow warnings in vendored tree-sitter code
+#![allow(clippy::all)]
+#![allow(mismatched_lifetime_syntaxes)]
+#![allow(rustdoc::broken_intra_doc_links)]
+#![allow(rustdoc::private_intra_doc_links)]
 
 pub mod ffi;
 mod util;
@@ -30,12 +35,6 @@ use std::os::windows::io::AsRawHandle;
 
 pub use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
 use tree_sitter_language::LanguageFn;
-
-#[cfg(feature = "wasm")]
-mod wasm_language;
-#[cfg(feature = "wasm")]
-#[cfg_attr(docsrs, doc(cfg(feature = "wasm")))]
-pub use wasm_language::*;
 
 /// The latest ABI version that is supported by the current version of the
 /// library.

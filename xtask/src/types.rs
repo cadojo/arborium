@@ -85,6 +85,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 use facet::Facet;
 use facet_kdl as kdl;
 use facet_kdl::Spanned;
+use fs_err as fs;
 use miette::NamedSource;
 pub use rootcause::Report;
 
@@ -225,7 +226,6 @@ impl std::ops::Deref for Year {
 
 /// Has-scanner child node (bool value).
 #[derive(Debug, Clone, Facet)]
-#[facet(rename = "has_scanner")]
 pub struct HasScanner {
     #[facet(kdl::argument)]
     pub value: bool,
@@ -234,6 +234,13 @@ pub struct HasScanner {
 /// Internal grammar marker (bool value).
 #[derive(Debug, Clone, Facet)]
 pub struct Internal {
+    #[facet(kdl::argument)]
+    pub value: bool,
+}
+
+/// Tests cursed marker (bool value) - skip test generation for problematic grammars.
+#[derive(Debug, Clone, Facet)]
+pub struct TestsCursed {
     #[facet(kdl::argument)]
     pub value: bool,
 }
@@ -289,8 +296,12 @@ pub struct GrammarConfig {
     #[facet(kdl::child, default)]
     pub internal: Option<Internal>,
 
+    /// Tests are cursed (skip test generation due to platform issues).
+    #[facet(kdl::child, default, rename = "tests-cursed")]
+    pub tests_cursed: Option<TestsCursed>,
+
     /// Whether this grammar has a scanner.c file.
-    #[facet(kdl::child, default)]
+    #[facet(kdl::child, default, rename = "has-scanner")]
     pub has_scanner: Option<HasScanner>,
 
     /// Path to the grammar within the repo (for multi-grammar repos).
@@ -298,7 +309,7 @@ pub struct GrammarConfig {
     pub grammar_path: Option<GrammarPath>,
 
     /// Override the C symbol name.
-    #[facet(kdl::child, default)]
+    #[facet(kdl::child, default, rename = "c-symbol")]
     pub c_symbol: Option<CSymbol>,
 
     /// Query configuration (highlights inheritance).
@@ -350,6 +361,11 @@ impl GrammarConfig {
     /// Whether this grammar has a scanner.
     pub fn has_scanner(&self) -> bool {
         self.has_scanner.as_ref().map(|h| h.value).unwrap_or(false)
+    }
+
+    /// Whether tests are cursed (skip test generation).
+    pub fn tests_cursed(&self) -> bool {
+        self.tests_cursed.as_ref().map(|t| t.value).unwrap_or(false)
     }
 }
 
@@ -474,7 +490,7 @@ structstruck::strike! {
         /// src/lib.rs - generated
         pub lib_rs: FileState,
 
-        /// grammar-src/ directory state
+        /// grammar/src/ directory state
         pub grammar_src: pub struct GrammarSrcState {
             /// parser.c - required
             pub parser_c: FileState,
@@ -566,7 +582,7 @@ impl CrateRegistry {
     pub fn load(crates_dir: &Utf8Path) -> Result<Self, Report> {
         let mut crates = BTreeMap::new();
 
-        for entry in std::fs::read_dir(crates_dir)? {
+        for entry in fs::read_dir(crates_dir)? {
             let entry = entry?;
             let path = entry.path();
 
@@ -602,7 +618,7 @@ impl CrateRegistry {
         // Check for arborium.kdl
         let kdl_path = path.join("arborium.kdl");
         let (config, kdl_source) = if kdl_path.exists() {
-            let content = std::fs::read_to_string(&kdl_path)?;
+            let content = fs::read_to_string(&kdl_path)?;
             let config: CrateConfig = match facet_kdl::from_str(&content) {
                 Ok(c) => c,
                 Err(e) => {
@@ -632,13 +648,15 @@ impl CrateRegistry {
         files.build_rs = Self::read_file_state(&path.join("build.rs"));
         files.lib_rs = Self::read_file_state(&path.join("src/lib.rs"));
 
-        // Check grammar-src/
-        let grammar_src_path = path.join("grammar-src");
+        // Check grammar/src/ for generated files
+        let grammar_src_path = path.join("grammar/src");
         if grammar_src_path.exists() {
             files.grammar_src.parser_c = Self::read_file_state(&grammar_src_path.join("parser.c"));
-            files.grammar_src.scanner_c =
-                Self::read_file_state(&grammar_src_path.join("scanner.c"));
-            // Could scan for other files here
+        }
+        // Check grammar/ for scanner.c (handwritten, not in src/)
+        let grammar_path = path.join("grammar");
+        if grammar_path.exists() {
+            files.grammar_src.scanner_c = Self::read_file_state(&grammar_path.join("scanner.c"));
         }
 
         // Check queries/
@@ -682,7 +700,7 @@ impl CrateRegistry {
 
     /// Read a file's state.
     fn read_file_state(path: &Utf8Path) -> FileState {
-        match std::fs::read_to_string(path) {
+        match fs::read_to_string(path) {
             Ok(content) => FileState::Present { content },
             Err(_) => FileState::Missing,
         }
@@ -690,7 +708,7 @@ impl CrateRegistry {
 
     /// Check a sample file's state.
     fn check_sample_file(path: &Utf8Path) -> SampleFileState {
-        let content = match std::fs::read_to_string(path) {
+        let content = match fs::read_to_string(path) {
             Ok(c) => c,
             Err(_) => return SampleFileState::Missing,
         };

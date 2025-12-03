@@ -1,21 +1,25 @@
 //! xtask for arborium - development tasks
 //!
-//! Usage: cargo xtask <command>
+//! Usage: `cargo xtask <command>`
 //!
 //! Commands:
-//!   lint           Validate all grammars
-//!   gen [name]     Regenerate crate files from arborium.kdl
-//!   serve          Build and serve the WASM demo locally
+//! - `doctor` - Check for required external tools
+//! - `lint` - Validate all grammars
+//! - `gen \[name\]` - Regenerate crate files from arborium.kdl
+//! - `serve` - Build and serve the WASM demo locally
 
+mod cache;
 mod generate;
 mod lint_new;
 mod plan;
 mod serve;
+mod tool;
 mod types;
 mod util;
 
 use facet::Facet;
 use facet_args as args;
+use owo_colors::OwoColorize;
 
 /// Arborium development tasks
 #[derive(Debug, Facet)]
@@ -29,10 +33,18 @@ struct Args {
 #[repr(u8)]
 #[allow(dead_code)] // variants used by facet_args derive
 enum Command {
-    /// Validate all grammar configurations
-    Lint,
+    /// Check for required external tools
+    Doctor,
 
-    /// Regenerate crate files (Cargo.toml, build.rs, lib.rs, grammar-src/) from arborium.kdl
+    /// Validate all grammar configurations
+    Lint {
+        /// Strict mode: missing generated files (parser.c) are errors.
+        /// Without this flag, they're warnings (useful before running gen).
+        #[facet(args::named, default)]
+        strict: bool,
+    },
+
+    /// Regenerate crate files (Cargo.toml, build.rs, lib.rs, grammar/src/) from arborium.kdl
     Gen {
         /// Optional grammar name to regenerate (regenerates all if omitted)
         #[facet(args::positional, default)]
@@ -77,14 +89,33 @@ fn main() {
     let crates_dir = camino::Utf8PathBuf::from_path_buf(crates_dir).expect("non-UTF8 path");
 
     match args.command {
-        Command::Lint => {
-            if let Err(e) = lint_new::run_lints(&crates_dir) {
+        Command::Doctor => {
+            tool::print_tools_report();
+        }
+        Command::Lint { strict } => {
+            let options = lint_new::LintOptions { strict };
+            if let Err(e) = lint_new::run_lints(&crates_dir, options) {
                 eprintln!("{:?}", e);
                 std::process::exit(1);
             }
         }
         Command::Gen { name, dry_run } => {
-            match generate::plan_generate(&crates_dir, name.as_deref()) {
+            use std::time::Instant;
+            let total_start = Instant::now();
+
+            // Check for required tools before starting
+            if !tool::check_tools_or_report(tool::GEN_TOOLS) {
+                std::process::exit(1);
+            }
+
+            let mode = if dry_run {
+                plan::PlanMode::DryRun
+            } else {
+                plan::PlanMode::Execute
+            };
+
+            // Plan and execute generation
+            match generate::plan_generate(&crates_dir, name.as_deref(), mode) {
                 Ok(plans) => {
                     if let Err(e) = plans.run(dry_run) {
                         eprintln!("Error: {}", e);
@@ -92,12 +123,38 @@ fn main() {
                     }
                 }
                 Err(e) => {
-                    eprintln!("Error planning generation: {}", e);
+                    eprintln!("{}", e);
                     std::process::exit(1);
                 }
             }
+
+            // Run strict lint after generation (now parser.c should exist)
+            if !dry_run {
+                println!();
+                println!(
+                    "{}",
+                    "Running post-generation lint (strict)...".cyan().bold()
+                );
+                let options = lint_new::LintOptions { strict: true };
+                if let Err(e) = lint_new::run_lints(&crates_dir, options) {
+                    eprintln!("{:?}", e);
+                    std::process::exit(1);
+                }
+            }
+
+            let total_elapsed = total_start.elapsed();
+            println!(
+                "\n{} Total time: {:.2}s",
+                "●".green(),
+                total_elapsed.as_secs_f64()
+            );
         }
         Command::Serve { address, port, dev } => {
+            // Check for required tools before starting
+            if !tool::check_tools_or_report(tool::SERVE_TOOLS) {
+                std::process::exit(1);
+            }
+
             let addr = address.as_deref().unwrap_or("127.0.0.1");
             serve::serve(&crates_dir, addr, port, dev);
         }

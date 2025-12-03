@@ -7,7 +7,8 @@ grammar {
     name "Idris"
     tag "code"
     tier 4
-    has_scanner #true
+    has-scanner #true
+    tests-cursed #true // Unicode in highlights.scm breaks on Windows
     icon "mdi:alpha-i-box-outline"
     aliases "idr"
 

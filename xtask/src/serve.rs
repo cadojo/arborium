@@ -8,11 +8,11 @@ use crate::util;
 use camino::{Utf8Path, Utf8PathBuf};
 use facet::Facet;
 use owo_colors::OwoColorize;
-use pulldown_cmark::{html, Options, Parser};
+use pulldown_cmark::{Options, Parser, html};
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 // =============================================================================
 // Registry JSON types (for demo consumption)
@@ -273,7 +273,7 @@ where
 fn generate_sample_files(
     crates_dir: &Utf8Path,
     registry: &Registry,
-    demo_dir: &PathBuf,
+    demo_dir: &Path,
 ) -> Result<(), String> {
     let samples_dir = demo_dir.join("samples");
     if !samples_dir.exists() {
@@ -302,8 +302,8 @@ fn generate_sample_files(
     Ok(())
 }
 
-fn build_wasm(demo_dir: &PathBuf, dev: bool) -> Result<(), String> {
-    use std::process::Command;
+fn build_wasm(demo_dir: &Path, dev: bool) -> Result<(), String> {
+    use crate::tool::Tool;
 
     // Nuke pkg/ to avoid stale cached files
     let pkg_dir = demo_dir.join("pkg");
@@ -311,7 +311,8 @@ fn build_wasm(demo_dir: &PathBuf, dev: bool) -> Result<(), String> {
         fs::remove_dir_all(&pkg_dir).map_err(|e| format!("Failed to remove pkg/: {}", e))?;
     }
 
-    let mut cmd = Command::new("wasm-pack");
+    let wasm_pack = Tool::WasmPack.find().map_err(|e| e.to_string())?;
+    let mut cmd = wasm_pack.command();
     cmd.arg("build").arg(demo_dir).arg("--target").arg("web");
 
     if dev {
@@ -365,7 +366,7 @@ fn build_wasm(demo_dir: &PathBuf, dev: bool) -> Result<(), String> {
     Ok(())
 }
 
-fn generate_registry_json(crates_dir: &Utf8Path, demo_dir: &PathBuf) -> Result<Registry, String> {
+fn generate_registry_json(crates_dir: &Utf8Path, demo_dir: &Path) -> Result<Registry, String> {
     let crates_dir =
         Utf8PathBuf::from_path_buf(crates_dir.to_path_buf().into()).map_err(|_| "non-UTF8 path")?;
 
@@ -386,7 +387,7 @@ fn generate_registry_json(crates_dir: &Utf8Path, demo_dir: &PathBuf) -> Result<R
 
 fn fetch_icons_from_registry(
     registry: &Registry,
-    demo_dir: &PathBuf,
+    demo_dir: &Path,
 ) -> Result<BTreeMap<String, String>, String> {
     let template_path = demo_dir.join("template.html");
     let template = fs::read_to_string(&template_path).map_err(|e| e.to_string())?;
@@ -491,32 +492,147 @@ struct ThemeInfo {
 /// All themes with their metadata (must match CSS and app.js)
 const THEMES: &[ThemeInfo] = &[
     // Catppuccin family
-    ThemeInfo { id: "mocha", name: "Catppuccin Mocha", variant: "dark", bg: "#1e1e2e" },
-    ThemeInfo { id: "macchiato", name: "Catppuccin Macchiato", variant: "dark", bg: "#24273a" },
-    ThemeInfo { id: "frappe", name: "Catppuccin Frappe", variant: "dark", bg: "#303446" },
-    ThemeInfo { id: "latte", name: "Catppuccin Latte", variant: "light", bg: "#eff1f5" },
+    ThemeInfo {
+        id: "mocha",
+        name: "Catppuccin Mocha",
+        variant: "dark",
+        bg: "#1e1e2e",
+    },
+    ThemeInfo {
+        id: "macchiato",
+        name: "Catppuccin Macchiato",
+        variant: "dark",
+        bg: "#24273a",
+    },
+    ThemeInfo {
+        id: "frappe",
+        name: "Catppuccin Frappe",
+        variant: "dark",
+        bg: "#303446",
+    },
+    ThemeInfo {
+        id: "latte",
+        name: "Catppuccin Latte",
+        variant: "light",
+        bg: "#eff1f5",
+    },
     // Popular dark themes
-    ThemeInfo { id: "tokyo-night", name: "Tokyo Night", variant: "dark", bg: "#1a1b26" },
-    ThemeInfo { id: "dracula", name: "Dracula", variant: "dark", bg: "#282a36" },
-    ThemeInfo { id: "monokai", name: "Monokai Pro", variant: "dark", bg: "#2d2a2e" },
-    ThemeInfo { id: "one-dark", name: "One Dark", variant: "dark", bg: "#282c34" },
-    ThemeInfo { id: "nord", name: "Nord", variant: "dark", bg: "#2e3440" },
-    ThemeInfo { id: "gruvbox-dark", name: "Gruvbox Dark", variant: "dark", bg: "#282828" },
-    ThemeInfo { id: "rose-pine-moon", name: "Rosé Pine Moon", variant: "dark", bg: "#232136" },
-    ThemeInfo { id: "kanagawa-dragon", name: "Kanagawa Dragon", variant: "dark", bg: "#181616" },
-    ThemeInfo { id: "cobalt2", name: "Cobalt2", variant: "dark", bg: "#193549" },
-    ThemeInfo { id: "zenburn", name: "Zenburn", variant: "dark", bg: "#3f3f3f" },
-    ThemeInfo { id: "melange-dark", name: "Melange Dark", variant: "dark", bg: "#292522" },
-    ThemeInfo { id: "monokai-aqua", name: "Monokai Aqua", variant: "dark", bg: "#222222" },
-    ThemeInfo { id: "desert256", name: "Desert256", variant: "dark", bg: "#000000" },
+    ThemeInfo {
+        id: "tokyo-night",
+        name: "Tokyo Night",
+        variant: "dark",
+        bg: "#1a1b26",
+    },
+    ThemeInfo {
+        id: "dracula",
+        name: "Dracula",
+        variant: "dark",
+        bg: "#282a36",
+    },
+    ThemeInfo {
+        id: "monokai",
+        name: "Monokai Pro",
+        variant: "dark",
+        bg: "#2d2a2e",
+    },
+    ThemeInfo {
+        id: "one-dark",
+        name: "One Dark",
+        variant: "dark",
+        bg: "#282c34",
+    },
+    ThemeInfo {
+        id: "nord",
+        name: "Nord",
+        variant: "dark",
+        bg: "#2e3440",
+    },
+    ThemeInfo {
+        id: "gruvbox-dark",
+        name: "Gruvbox Dark",
+        variant: "dark",
+        bg: "#282828",
+    },
+    ThemeInfo {
+        id: "rose-pine-moon",
+        name: "Rosé Pine Moon",
+        variant: "dark",
+        bg: "#232136",
+    },
+    ThemeInfo {
+        id: "kanagawa-dragon",
+        name: "Kanagawa Dragon",
+        variant: "dark",
+        bg: "#181616",
+    },
+    ThemeInfo {
+        id: "cobalt2",
+        name: "Cobalt2",
+        variant: "dark",
+        bg: "#193549",
+    },
+    ThemeInfo {
+        id: "zenburn",
+        name: "Zenburn",
+        variant: "dark",
+        bg: "#3f3f3f",
+    },
+    ThemeInfo {
+        id: "melange-dark",
+        name: "Melange Dark",
+        variant: "dark",
+        bg: "#292522",
+    },
+    ThemeInfo {
+        id: "monokai-aqua",
+        name: "Monokai Aqua",
+        variant: "dark",
+        bg: "#222222",
+    },
+    ThemeInfo {
+        id: "desert256",
+        name: "Desert256",
+        variant: "dark",
+        bg: "#000000",
+    },
     // GitHub
-    ThemeInfo { id: "github-dark", name: "GitHub Dark", variant: "dark", bg: "#0d1117" },
-    ThemeInfo { id: "github-light", name: "GitHub Light", variant: "light", bg: "#ffffff" },
+    ThemeInfo {
+        id: "github-dark",
+        name: "GitHub Dark",
+        variant: "dark",
+        bg: "#0d1117",
+    },
+    ThemeInfo {
+        id: "github-light",
+        name: "GitHub Light",
+        variant: "light",
+        bg: "#ffffff",
+    },
     // Light themes
-    ThemeInfo { id: "gruvbox-light", name: "Gruvbox Light", variant: "light", bg: "#fbf1c7" },
-    ThemeInfo { id: "alabaster", name: "Alabaster", variant: "light", bg: "#f7f7f7" },
-    ThemeInfo { id: "dayfox", name: "Dayfox", variant: "light", bg: "#f6f2ee" },
-    ThemeInfo { id: "melange-light", name: "Melange Light", variant: "light", bg: "#f1f1f1" },
+    ThemeInfo {
+        id: "gruvbox-light",
+        name: "Gruvbox Light",
+        variant: "light",
+        bg: "#fbf1c7",
+    },
+    ThemeInfo {
+        id: "alabaster",
+        name: "Alabaster",
+        variant: "light",
+        bg: "#f7f7f7",
+    },
+    ThemeInfo {
+        id: "dayfox",
+        name: "Dayfox",
+        variant: "light",
+        bg: "#f6f2ee",
+    },
+    ThemeInfo {
+        id: "melange-light",
+        name: "Melange Light",
+        variant: "light",
+        bg: "#f1f1f1",
+    },
 ];
 
 /// Generate HTML for theme swatches in the "Theme support" section
@@ -548,7 +664,7 @@ fn generate_theme_swatches() -> String {
     html
 }
 
-fn generate_index_html(demo_dir: &PathBuf, icons: &BTreeMap<String, String>) -> Result<(), String> {
+fn generate_index_html(demo_dir: &Path, icons: &BTreeMap<String, String>) -> Result<(), String> {
     let template_path = demo_dir.join("template.html");
     let output_path = demo_dir.join("index.html");
 
@@ -577,7 +693,7 @@ fn generate_index_html(demo_dir: &PathBuf, icons: &BTreeMap<String, String>) -> 
 }
 
 fn generate_app_js(
-    demo_dir: &PathBuf,
+    demo_dir: &Path,
     registry: &Registry,
     icons: &BTreeMap<String, String>,
 ) -> Result<(), String> {
@@ -650,10 +766,7 @@ fn build_language_info_js(registry: &Registry) -> String {
             js.push_str(&format!("        \"year\": {},\n", year));
         }
         if let Some(ref link) = grammar.link {
-            js.push_str(&format!(
-                "        \"url\": \"{}\",\n",
-                escape_for_js(link)
-            ));
+            js.push_str(&format!("        \"url\": \"{}\",\n", escape_for_js(link)));
         }
         if let Some(ref trivia) = grammar.trivia {
             let html = markdown_to_html(trivia);
@@ -731,13 +844,13 @@ fn escape_for_js(s: &str) -> String {
         .replace('\t', "\\t")
 }
 
-/// Render markdown to HTML (inline, stripping outer <p> tags)
+/// Render markdown to HTML (inline, stripping outer `<p>` tags)
 fn markdown_to_html(markdown: &str) -> String {
     let options = Options::empty();
     let parser = Parser::new_ext(markdown, options);
     let mut html_output = String::new();
     html::push_html(&mut html_output, parser);
-    // Strip outer <p>...</p> tags for inline use
+    // Strip outer `<p>...</p>` tags for inline use
     let trimmed = html_output.trim();
     if trimmed.starts_with("<p>") && trimmed.ends_with("</p>") {
         trimmed[3..trimmed.len() - 4].to_string()
@@ -746,7 +859,7 @@ fn markdown_to_html(markdown: &str) -> String {
     }
 }
 
-fn precompress_files(demo_dir: &PathBuf) -> Result<(), String> {
+fn precompress_files(demo_dir: &Path) -> Result<(), String> {
     let files = ["index.html", "registry.json", "styles.css", "app.js"];
     let pkg_files = ["arborium_demo.js", "app.generated.js"];
 
@@ -763,7 +876,7 @@ fn precompress_files(demo_dir: &PathBuf) -> Result<(), String> {
     Ok(())
 }
 
-fn compress_file(path: &PathBuf) -> Result<(), String> {
+fn compress_file(path: &Path) -> Result<(), String> {
     if !path.exists() {
         return Ok(());
     }
@@ -783,7 +896,7 @@ fn compress_file(path: &PathBuf) -> Result<(), String> {
     Ok(())
 }
 
-fn precompress_files_fast(demo_dir: &PathBuf) -> Result<(), String> {
+fn precompress_files_fast(demo_dir: &Path) -> Result<(), String> {
     let files = ["index.html", "registry.json", "styles.css", "app.js"];
     let pkg_files = ["arborium_demo.js", "app.generated.js"];
 
@@ -800,7 +913,7 @@ fn precompress_files_fast(demo_dir: &PathBuf) -> Result<(), String> {
     Ok(())
 }
 
-fn compress_file_fast(path: &PathBuf) -> Result<(), String> {
+fn compress_file_fast(path: &Path) -> Result<(), String> {
     if !path.exists() {
         return Ok(());
     }
@@ -877,7 +990,7 @@ fn bind_server(addr: &str, port: Option<u16>) -> (tiny_http::Server, u16) {
     }
 }
 
-fn serve_files(server: tiny_http::Server, demo_dir: &PathBuf) {
+fn serve_files(server: tiny_http::Server, demo_dir: &Path) {
     for request in server.incoming_requests() {
         let url_path = request.url().trim_start_matches('/');
 
@@ -952,7 +1065,7 @@ fn serve_files(server: tiny_http::Server, demo_dir: &PathBuf) {
     }
 }
 
-fn guess_content_type(path: &PathBuf) -> &'static str {
+fn guess_content_type(path: &Path) -> &'static str {
     match path.extension().and_then(|e| e.to_str()) {
         Some("html") | Some("htm") => "text/html; charset=utf-8",
         Some("js") | Some("mjs") | Some("cjs") => "application/javascript; charset=utf-8",

@@ -5,9 +5,26 @@
 
 #![allow(dead_code)]
 
+use crate::tool::Tool;
 use camino::{Utf8Path, Utf8PathBuf};
+use fs_err as fs;
 use owo_colors::OwoColorize;
 use std::fmt;
+
+/// Execution mode for planning operations.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PlanMode {
+    /// Preview mode - collect old content for diffs, don't write anything.
+    DryRun,
+    /// Execute mode - hash-compare files, write changes to disk.
+    Execute,
+}
+
+impl PlanMode {
+    pub fn is_dry_run(self) -> bool {
+        matches!(self, PlanMode::DryRun)
+    }
+}
 
 /// A single operation that can be planned and executed.
 #[derive(Debug, Clone)]
@@ -20,9 +37,10 @@ pub enum Operation {
     },
 
     /// Update an existing file with new content.
+    /// Note: old_content is only populated in dry-run mode for diffing.
     UpdateFile {
         path: Utf8PathBuf,
-        old_content: String,
+        old_content: Option<String>,
         new_content: String,
         description: String,
     },
@@ -108,23 +126,23 @@ impl Operation {
         match self {
             Operation::CreateFile { path, content, .. } => {
                 if let Some(parent) = path.parent() {
-                    std::fs::create_dir_all(parent)?;
+                    fs::create_dir_all(parent)?;
                 }
-                std::fs::write(path, content)?;
+                fs::write(path, content)?;
                 Ok(())
             }
             Operation::UpdateFile {
                 path, new_content, ..
             } => {
-                std::fs::write(path, new_content)?;
+                fs::write(path, new_content)?;
                 Ok(())
             }
             Operation::DeleteFile { path, .. } => {
-                std::fs::remove_file(path)?;
+                fs::remove_file(path)?;
                 Ok(())
             }
             Operation::CreateDir { path, .. } => {
-                std::fs::create_dir_all(path)?;
+                fs::create_dir_all(path)?;
                 Ok(())
             }
             Operation::RunCommand {
@@ -149,16 +167,18 @@ impl Operation {
             }
             Operation::CopyFile { src, dest, .. } => {
                 if let Some(parent) = dest.parent() {
-                    std::fs::create_dir_all(parent)?;
+                    fs::create_dir_all(parent)?;
                 }
-                std::fs::copy(src, dest)?;
+                fs::copy(src, dest)?;
                 Ok(())
             }
             Operation::GitClone {
                 url, dest, commit, ..
             } => {
+                let git = Tool::Git.find()?;
                 // Clone the repo
-                let status = std::process::Command::new("git")
+                let status = git
+                    .command()
                     .args(["clone", "--depth", "1", url, dest.as_str()])
                     .status()?;
                 if !status.success() {
@@ -169,7 +189,8 @@ impl Operation {
                 }
                 // Checkout specific commit if specified
                 if let Some(commit) = commit {
-                    let status = std::process::Command::new("git")
+                    let status = git
+                        .command()
                         .args(["checkout", commit])
                         .current_dir(dest)
                         .status()?;
@@ -222,11 +243,18 @@ pub enum ExecuteError {
         command: String,
         status: std::process::ExitStatus,
     },
+    ToolNotFound(crate::tool::ToolNotFound),
 }
 
 impl From<std::io::Error> for ExecuteError {
     fn from(e: std::io::Error) -> Self {
         ExecuteError::Io(e)
+    }
+}
+
+impl From<crate::tool::ToolNotFound> for ExecuteError {
+    fn from(e: crate::tool::ToolNotFound) -> Self {
+        ExecuteError::ToolNotFound(e)
     }
 }
 
@@ -237,6 +265,7 @@ impl fmt::Display for ExecuteError {
             ExecuteError::CommandFailed { command, status } => {
                 write!(f, "Command '{}' failed with {}", command, status)
             }
+            ExecuteError::ToolNotFound(e) => write!(f, "{}", e),
         }
     }
 }
@@ -370,14 +399,9 @@ impl Plan {
                 } => {
                     println!("  {} {}", "create".green(), description);
                     println!("    {} {}", "->".dimmed(), path);
-                    // Show first few lines of new content
-                    for line in content.lines().take(10) {
-                        println!("    {} {}", "+".green(), line.green());
-                    }
+                    // Just show line count, no content preview (too verbose for large files)
                     let total_lines = content.lines().count();
-                    if total_lines > 10 {
-                        println!("    {} ... {} more lines", "+".green(), total_lines - 10);
-                    }
+                    println!("    {} ({} lines)", "+".green(), total_lines);
                 }
                 Operation::UpdateFile {
                     path,
@@ -387,7 +411,11 @@ impl Plan {
                 } => {
                     println!("  {} {}", "update".yellow(), description);
                     println!("    {} {}", "->".dimmed(), path);
-                    display_diff(old_content, new_content);
+                    if let Some(old) = old_content {
+                        display_diff(old, new_content);
+                    } else {
+                        println!("    {}", "(content changed)".dimmed());
+                    }
                 }
                 Operation::DeleteFile { path, description } => {
                     println!("  {} {}", "delete".red(), description);
@@ -474,15 +502,22 @@ impl PlanSet {
 
     /// Execute all plans.
     pub fn execute(&self) -> Result<(), ExecuteError> {
+        use std::time::Instant;
+        let start = Instant::now();
+
         for plan in &self.plans {
             if let Some(ref name) = plan.crate_name {
                 println!("Processing {}...", name);
             }
             plan.execute()?;
         }
+
+        let elapsed = start.elapsed();
         println!(
-            "\nDone! {} operation(s) completed.",
-            self.total_operations()
+            "\n{} {} operation(s) completed in {:.2}s",
+            "●".green(),
+            self.total_operations(),
+            elapsed.as_secs_f64()
         );
         Ok(())
     }

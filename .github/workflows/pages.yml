@@ -6,7 +6,7 @@ on:
     branches: [main]
     paths:
       - 'demo/**'
-      - 'src/**'
+      - 'crates/**'
       - 'Cargo.toml'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
@@ -21,10 +21,58 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  generate:
+    runs-on: depot-ubuntu-24.04-64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-targets: true
+          prefix-key: "v0-rust-generate"
+
+      - name: Restore grammar generation cache
+        uses: actions/cache@v4
+        with:
+          path: .cache/arborium
+          key: grammar-cache-${{ hashFiles('crates/*/grammar/grammar.js', 'crates/*/grammar/package.json', 'crates/*/common/**') }}
+          restore-keys: |
+            grammar-cache-
+
+      - name: Install tree-sitter CLI
+        run: cargo install tree-sitter-cli
+
+      - name: Generate grammar sources
+        run: cargo run --release -p xtask -- gen
+
+      - name: Create grammar sources tarball
+        run: |
+          find crates -type d -name 'src' -path '*/grammar/src' > grammar_dirs.txt
+          tar -cvf grammar-sources.tar -T grammar_dirs.txt
+
+      - name: Upload grammar sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: grammar-sources
+          path: grammar-sources.tar
+          retention-days: 1
+
   build:
+    needs: generate
     runs-on: depot-ubuntu-24.04-16
     steps:
       - uses: actions/checkout@v4
+
+      - name: Download grammar sources
+        uses: actions/download-artifact@v4
+        with:
+          name: grammar-sources
+
+      - name: Extract grammar sources
+        run: tar -xvf grammar-sources.tar
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -50,7 +98,7 @@ jobs:
           cp -r demo/pkg _site/
 
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
