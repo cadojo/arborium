@@ -22,17 +22,10 @@ concurrency:
 
 jobs:
   generate:
-    runs-on: depot-ubuntu-24.04-64
+    runs-on: depot-ubuntu-24.04-32
+    container: ghcr.io/bearcove/arborium-plugin-builder:latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          cache-targets: true
-          prefix-key: "v0-rust-generate"
 
       - name: Restore grammar generation cache
         uses: actions/cache@v4
@@ -42,11 +35,8 @@ jobs:
           restore-keys: |
             grammar-cache-
 
-      - name: Install tree-sitter CLI
-        run: cargo install tree-sitter-cli
-
       - name: Generate grammar sources
-        run: cargo run --release -p xtask -- gen
+        run: arborium-xtask gen
 
       - name: Create grammar sources tarball
         run: |
