@@ -17,9 +17,9 @@ grammar {
     trivia "C evolved from B/BCPL during 1969-1973 alongside Unix; the name comes from its predecessor B."
 
     sample {
-        path "samples/paren_main.c"
-        description "Paren interpreter main with parser, eval loop, and hash table usage."
-        link "https://github.com/gfaster/paren/blob/main/main.c"
-        license "MIT"
+        path "samples/shortest.c"
+        description "Dijkstra's shortest path algorithm for FSM traversal."
+        link "https://github.com/katef/libfsm/blob/main/src/libfsm/shortest.c"
+        license "BSD-2-Clause"
     }
 }
