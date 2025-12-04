@@ -50,7 +50,7 @@ jobs:
         run: arborium-xtask gen --version ${{ steps.version.outputs.version }}
       - 
         name: Create grammar sources tarball
-        run: "find crates -type d -name 'src' -path '*/grammar/src' > grammar_dirs.txt\ntar -cvf grammar-sources.tar -T grammar_dirs.txt"
+        run: "for d in crates/arborium-*/; do\n  if [ -d \"$d/grammar\" ]; then\n    echo \"${d}Cargo.toml\"\n    echo \"${d}src\"\n    echo \"${d}grammar/src\"\n  fi\ndone > generated_files.txt\ntar -cvf grammar-sources.tar -T generated_files.txt"
       - 
         name: Upload grammar sources
         uses: actions/upload-artifact@v4

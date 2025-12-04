@@ -401,10 +401,18 @@ echo "Version: $VERSION (release: $IS_RELEASE)""#,
                     "arborium-xtask gen --version ${{ steps.version.outputs.version }}",
                 ),
                 // Create tarball for CI jobs (fast tar)
+                // Include everything generated: Cargo.toml, src/, and grammar/src/*
+                // Only include crates that have a grammar/ directory (generated grammar crates)
                 Step::run(
                     "Create grammar sources tarball",
-                    r#"find crates -type d -name 'src' -path '*/grammar/src' > grammar_dirs.txt
-tar -cvf grammar-sources.tar -T grammar_dirs.txt"#,
+                    r#"for d in crates/arborium-*/; do
+  if [ -d "$d/grammar" ]; then
+    echo "${d}Cargo.toml"
+    echo "${d}src"
+    echo "${d}grammar/src"
+  fi
+done > generated_files.txt
+tar -cvf grammar-sources.tar -T generated_files.txt"#,
                 ),
                 Step::uses("Upload grammar sources", "actions/upload-artifact@v4")
                     .with_inputs([
@@ -553,7 +561,12 @@ echo "No env imports found - WASM modules are browser-compatible""#,
             let job_id = format!("build-plugins-{}", group.index);
             let grammars_list = group.grammars.join(" ");
             let display_grammars = group.grammars.join(", ");
-            let job_name = format!("Plugins ({}/{}): {}", group.index + 1, total_groups, display_grammars);
+            let job_name = format!(
+                "Plugins ({}/{}): {}",
+                group.index + 1,
+                total_groups,
+                display_grammars
+            );
 
             plugin_job_ids.push(job_id.clone());
 
@@ -606,8 +619,10 @@ echo "No env imports found - WASM modules are browser-compatible""#,
                     "Regenerate with version",
                     "arborium-xtask gen --version ${{ needs.generate.outputs.version }}",
                 ),
-                Step::run("Publish to crates.io", "arborium-xtask publish crates")
-                    .with_env([("CARGO_REGISTRY_TOKEN", "${{ secrets.CARGO_REGISTRY_TOKEN }}")]),
+                Step::run("Publish to crates.io", "arborium-xtask publish crates").with_env([(
+                    "CARGO_REGISTRY_TOKEN",
+                    "${{ secrets.CARGO_REGISTRY_TOKEN }}",
+                )]),
             ]),
     );
 
@@ -635,12 +650,18 @@ echo "No env imports found - WASM modules are browser-compatible""#,
         }
 
         npm_steps.extend([
-            Step::run("List plugins", "find dist/plugins -name 'package.json' | head -20"),
+            Step::run(
+                "List plugins",
+                "find dist/plugins -name 'package.json' | head -20",
+            ),
             install_rust(),
             rust_cache(),
             Step::run("Build xtask", "cargo build --release -p xtask"),
-            Step::run("Publish to npm", "./target/release/xtask publish npm -o dist/plugins")
-                .with_env([("NODE_AUTH_TOKEN", "${{ secrets.NPM_TOKEN }}")]),
+            Step::run(
+                "Publish to npm",
+                "./target/release/xtask publish npm -o dist/plugins",
+            )
+            .with_env([("NODE_AUTH_TOKEN", "${{ secrets.NPM_TOKEN }}")]),
         ]);
 
         jobs.insert(
