@@ -1,5 +1,4 @@
 [package]
-publish = false
 name = "arborium-test-harness"
 version.workspace = true
 edition.workspace = true

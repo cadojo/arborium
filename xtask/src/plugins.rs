@@ -1162,7 +1162,7 @@ fn generate_package_json(language: &str, version: &str) -> String {
   "license": "MIT OR Apache-2.0",
   "repository": {{
     "type": "git",
-    "url": "https://github.com/bearcove/arborium.git"
+    "url": "git+https://github.com/bearcove/arborium.git"
   }},
   "homepage": "https://github.com/bearcove/arborium",
   "bugs": {{
