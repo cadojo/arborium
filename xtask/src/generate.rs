@@ -13,7 +13,7 @@ use crate::types::{CrateRegistry, CrateState};
 use crate::util::find_repo_root;
 use camino::{Utf8Path, Utf8PathBuf};
 use fs_err as fs;
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+// Removed indicatif imports since we no longer use spinners for fast operations
 use owo_colors::OwoColorize;
 use rayon::prelude::*;
 use rootcause::Report;
@@ -167,10 +167,7 @@ pub fn plan_generate(
     let is_tty = std::io::stdout().is_terminal();
 
     // Set up multi-progress for parallel spinners (only used in TTY mode)
-    let mp = MultiProgress::new();
-    let spinner_style = ProgressStyle::default_spinner()
-        .template("{spinner:.green} {msg} ({elapsed})")
-        .unwrap();
+    // No longer using spinners for fast operations
 
     // Thread-safe collection for plans and errors
     let plans = Mutex::new(PlanSet::new());
@@ -187,21 +184,13 @@ pub fn plan_generate(
             let grammar_dir = crate_state.path.join("grammar");
             let needs_generation = grammar_dir.exists() && grammar_dir.join("grammar.js").exists();
 
-            // Show progress - spinner in TTY, plain text in CI
-            let pb = if needs_generation {
-                if is_tty {
-                    let pb = mp.add(ProgressBar::new_spinner());
-                    pb.set_style(spinner_style.clone());
-                    pb.set_message(format!("Generating {}...", crate_name));
-                    pb.enable_steady_tick(std::time::Duration::from_millis(80));
-                    Some(pb)
-                } else {
-                    println!("{} Generating {}...", "●".cyan(), crate_name);
-                    None
-                }
-            } else {
-                None
-            };
+            // Track timing for slow operations
+            let start_time = std::time::Instant::now();
+
+            // Show progress immediately in non-TTY (CI), delay for TTY
+            if needs_generation && !is_tty {
+                println!("{} Generating {}...", "●".cyan(), crate_name);
+            }
 
             match plan_crate_generation(
                 crate_state,
@@ -217,16 +206,21 @@ pub fn plan_generate(
                     if !plan.is_empty() {
                         plans.lock().unwrap().add(plan);
                     }
-                    // Success: clear the spinner (no need to keep it around)
-                    if let Some(pb) = pb {
-                        pb.finish_and_clear();
+
+                    // Show completion message for slow operations (>1s) in TTY mode
+                    let elapsed = start_time.elapsed();
+                    if needs_generation && is_tty && elapsed.as_secs() >= 1 {
+                        println!(
+                            "{} {} completed in {:.1}s",
+                            "●".green(),
+                            crate_name,
+                            elapsed.as_secs_f64()
+                        );
                     }
                 }
                 Err(e) => {
                     // Failure: show error marker
-                    if let Some(pb) = pb {
-                        pb.finish_with_message(format!("{} {}", "✗".red(), crate_name));
-                    } else if needs_generation {
+                    if needs_generation {
                         println!("{} {} {}", "●".red(), "✗".red(), crate_name);
                     }
                     errors.lock().unwrap().push((crate_name.clone(), e));
@@ -239,21 +233,114 @@ pub fn plan_generate(
     // Print timing and cache stats
     let hits = cache_hits.load(Ordering::Relaxed);
     let misses = cache_misses.load(Ordering::Relaxed);
+    let total_cached = hits + misses;
+    let cache_hit_rate = if total_cached > 0 {
+        (hits as f64 / total_cached as f64) * 100.0
+    } else {
+        0.0
+    };
+
+    println!();
+    println!("{}", "=".repeat(80));
+    println!("{} Generation Summary", "●".cyan().bold());
+    println!("{}", "=".repeat(80));
+
+    // What was processed
     println!(
-        "{} Processed {} crate(s) in {:.2}s (registry: {:.2}s, generation: {:.2}s)",
+        "{} Processed: {} crates",
         "●".cyan(),
-        crates_to_process.len(),
-        processing_elapsed.as_secs_f64(),
-        registry_elapsed.as_secs_f64(),
-        (processing_elapsed - registry_elapsed).as_secs_f64(),
+        crates_to_process.len().to_string().bold()
     );
-    if hits > 0 || misses > 0 {
+
+    // Detailed timing breakdown
+    let generation_time = (processing_elapsed - registry_elapsed).as_secs_f64();
+
+    println!(
+        "{} Total time: {:.2}s",
+        "●".cyan(),
+        processing_elapsed.as_secs_f64().to_string().bold()
+    );
+    println!(
+        "  - Registry loading: {:.2}s ({:.1}%)",
+        registry_elapsed.as_secs_f64(),
+        (registry_elapsed.as_secs_f64() / processing_elapsed.as_secs_f64()) * 100.0
+    );
+    println!(
+        "  - Generation phase: {:.2}s ({:.1}%)",
+        generation_time,
+        (generation_time / processing_elapsed.as_secs_f64()) * 100.0
+    );
+    println!("    - includes: tree-sitter CLI, file templating, cache operations");
+
+    // Cache statistics
+    if total_cached > 0 {
+        println!("{} Cache performance:", "●".green().bold());
         println!(
-            "{} {} cache hits, {} misses",
-            "●".green(),
+            "  - {} hits ({:.1}%)",
             hits.to_string().green().bold(),
-            misses.to_string().yellow()
+            cache_hit_rate
         );
+        println!(
+            "  - {} misses ({:.1}%)",
+            misses.to_string().yellow().bold(),
+            100.0 - cache_hit_rate
+        );
+        println!("  - Time saved: ~{:.1}s (estimated)", hits as f64 * 2.0); // rough estimate
+
+        if hits > 0 {
+            println!("  {} Grammar files restored from cache", "✓".green());
+        }
+        if misses > 0 {
+            println!(
+                "  {} Grammar files regenerated with tree-sitter CLI",
+                "⚡".yellow()
+            );
+        }
+    }
+
+    // Recommend next commands based on results (following PUBLISH.md process)
+    println!();
+    println!("{} Recommended next steps:", "💡".bright_yellow().bold());
+
+    if hits > 0 && misses == 0 {
+        println!(
+            "  {} All grammars were cached - run tests to verify:",
+            "●".green()
+        );
+        println!("    {}", "cargo nextest run".bold());
+        println!(
+            "  {} Or serve the demo to test syntax highlighting:",
+            "●".cyan()
+        );
+        println!("    {}", "cargo xtask serve".bold());
+    } else if misses > 0 {
+        println!(
+            "  {} New grammars generated - verify with tests:",
+            "●".yellow()
+        );
+        println!("    {}", "cargo nextest run".bold());
+        println!("  {} Build WASM components for web demos:", "●".blue());
+        println!("    {}", "cargo xtask plugins".bold());
+        println!("  {} Test syntax highlighting in browser:", "●".cyan());
+        println!("    {}", "cargo xtask serve".bold());
+        println!();
+        println!(
+            "  {} Ready to release? Follow the PUBLISH.md process:",
+            "●".green().bold()
+        );
+        println!("    {}", "# 1. Tag and push core release".dimmed());
+        println!("    {}", "cargo xtask tag --core".bold());
+        println!("    {}", "# 2. Tag and push groups one by one".dimmed());
+        println!("    {}", "cargo xtask tag --group squirrel".bold());
+        println!("    {}", "cargo xtask tag --group deer".bold());
+        println!("    {}", "# ... (repeat for other groups)".dimmed());
+    } else {
+        println!(
+            "  {} No changes needed - you're up to date! 🎉",
+            "●".green()
+        );
+        println!("  {} Run tests to verify everything works:", "●".cyan());
+        println!("    {}", "cargo nextest run".bold());
     }
 
     // Check for errors - print all of them
@@ -445,6 +532,14 @@ fn plan_grammar_src_generation(
         // Cache hit! Extract to a temp dir first, then plan updates
         cache_hits.fetch_add(1, Ordering::Relaxed);
 
+        // Print cache hit info
+        let short_key = &cache_key[..16.min(cache_key.len())];
+        let cache_path = cache.cache_dir.join(crate_name).join(short_key);
+        println!(
+            "● {} (up-to-date: {}, re-using cache {})",
+            crate_name, short_key, cache_path
+        );
+
         let temp_dir = tempfile::tempdir()?;
         let temp_src = Utf8PathBuf::from_path_buf(temp_dir.path().to_path_buf())
             .map_err(|_| std::io::Error::other("Non-UTF8 temp path"))?;
@@ -458,6 +553,8 @@ fn plan_grammar_src_generation(
 
     // Cache miss - need to generate
     cache_misses.fetch_add(1, Ordering::Relaxed);
+    let short_key = &cache_key[..16.min(cache_key.len())];
+    println!("● {} (cache miss: {}, regenerating)", crate_name, short_key);
 
     // Create a temp directory with same structure as the crate
     // Some grammars have `require('../common/...')` so we need to preserve the relative paths

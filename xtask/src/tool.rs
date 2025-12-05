@@ -155,6 +155,48 @@ impl Tool {
             Err(_) => Err(ToolNotFound { tool: self }),
         }
     }
+
+    /// Get the version string for this tool (if supported).
+    pub fn get_version(self) -> Result<String, std::io::Error> {
+        let tool_path = self.find().map_err(|_| {
+            std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("{} not found in PATH", self.display_name()),
+            )
+        })?;
+
+        let version_arg = match self {
+            Tool::TreeSitter => "--version",
+            Tool::Git => "--version",
+            Tool::WasmPack => "--version",
+            Tool::CargoComponent => "--version",
+            Tool::Jco => "--version",
+            Tool::WasmOpt => "--version",
+            Tool::Curl => "--version",
+        };
+
+        let output = tool_path.command().arg(version_arg).output()?;
+
+        if !output.status.success() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("{} --version failed", self.display_name()),
+            ));
+        }
+
+        let version_output = String::from_utf8_lossy(&output.stdout);
+        // Take the first line and trim whitespace
+        let version = version_output.lines().next().unwrap_or("").trim();
+
+        if version.is_empty() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("{} returned empty version", self.display_name()),
+            ));
+        }
+
+        Ok(version.to_string())
+    }
 }
 
 /// Print a comprehensive tools report showing installed and missing tools.
