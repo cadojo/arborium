@@ -114,6 +114,7 @@ pub fn plan_generate(
     name: Option<&str>,
     mode: PlanMode,
     version: &str,
+    no_fail_fast: bool,
 ) -> Result<PlanSet, Report> {
     use std::time::Instant;
     let total_start = Instant::now();
@@ -165,6 +166,9 @@ pub fn plan_generate(
         return Ok(PlanSet::new());
     }
 
+    // Store length before potentially consuming the vector
+    let num_crates_to_process = crates_to_process.len();
+
     // Check if we're in a terminal (for spinners) or CI (for plain output)
     let is_tty = std::io::stdout().is_terminal();
 
@@ -175,10 +179,64 @@ pub fn plan_generate(
     let plans = Mutex::new(PlanSet::new());
     let errors: Mutex<Vec<(String, Report)>> = Mutex::new(Vec::new());
 
-    // Process crates in parallel
-    crates_to_process
-        .par_iter()
-        .for_each(|(_name, crate_state)| {
+    // Process crates in parallel (or sequentially with fail-fast)
+    let process_result: Result<(), Report> = if no_fail_fast {
+        // Parallel processing - collect all errors
+        crates_to_process
+            .par_iter()
+            .for_each(|(_name, crate_state)| {
+                let config = crate_state.config.as_ref().unwrap();
+                let crate_name = &crate_state.name;
+
+                // Check if this crate has a grammar to generate
+                let grammar_dir = crate_state.path.join("grammar");
+                let needs_generation =
+                    grammar_dir.exists() && grammar_dir.join("grammar.js").exists();
+
+                // Track timing for slow operations
+                let start_time = std::time::Instant::now();
+
+                // Progress is shown later in cache miss/hit messages
+
+                match plan_crate_generation(
+                    crate_state,
+                    config,
+                    &cache,
+                    crates_dir,
+                    &cache_hits,
+                    &cache_misses,
+                    mode,
+                    &workspace_version,
+                ) {
+                    Ok(plan) => {
+                        if !plan.is_empty() {
+                            plans.lock().unwrap().add(plan);
+                        }
+
+                        // Show completion message for slow operations (>1s) in TTY mode
+                        let elapsed = start_time.elapsed();
+                        if needs_generation && is_tty && elapsed.as_secs() >= 1 {
+                            println!(
+                                "{} {} completed in {:.1}s",
+                                "●".green(),
+                                crate_name,
+                                elapsed.as_secs_f64()
+                            );
+                        }
+                    }
+                    Err(e) => {
+                        // Failure: show error marker
+                        if needs_generation {
+                            println!("{} {} {}", "●".red(), "✗".red(), crate_name);
+                        }
+                        errors.lock().unwrap().push((crate_name.clone(), e));
+                    }
+                }
+            });
+        Ok(())
+    } else {
+        // Sequential processing - fail fast on first error
+        for (_name, crate_state) in &crates_to_process {
             let config = crate_state.config.as_ref().unwrap();
             let crate_name = &crate_state.name;
 
@@ -218,14 +276,19 @@ pub fn plan_generate(
                     }
                 }
                 Err(e) => {
-                    // Failure: show error marker
+                    // Fail fast - return error immediately
                     if needs_generation {
-                        println!("{} {} {}", "●".red(), "✗".red(), crate_name);
+                        println!("{} ✗ {}", "●".red(), crate_name);
                     }
-                    errors.lock().unwrap().push((crate_name.clone(), e));
+                    return Err(e);
                 }
             }
-        });
+        }
+        Ok(())
+    };
+
+    // Handle the result
+    process_result?;
 
     let processing_elapsed = total_start.elapsed();
 
@@ -248,7 +311,7 @@ pub fn plan_generate(
     println!(
         "{} Processed: {} crates",
         "●".cyan(),
-        crates_to_process.len().to_string().bold()
+        num_crates_to_process.to_string().bold()
     );
 
     // Detailed timing breakdown
@@ -342,17 +405,20 @@ pub fn plan_generate(
         println!("    {}", "cargo nextest run".bold());
     }
 
-    // Check for errors - print all of them
-    let errors = errors.into_inner().unwrap();
-    if !errors.is_empty() {
-        eprintln!();
-        for (crate_name, error) in &errors {
-            eprintln!("Error: {}: {}", crate_name.bold(), error);
+    // Check for errors - only relevant in no-fail-fast mode
+    // (In fail-fast mode, we would have already returned with the first error)
+    if no_fail_fast {
+        let errors = errors.into_inner().unwrap();
+        if !errors.is_empty() {
+            eprintln!();
+            for (crate_name, error) in &errors {
+                eprintln!("Error: {}: {}", crate_name.bold(), error);
+            }
+            Err(std::io::Error::other(format!(
+                "{} grammar(s) failed to generate",
+                errors.len()
+            )))?;
         }
-        Err(std::io::Error::other(format!(
-            "{} grammar(s) failed to generate",
-            errors.len()
-        )))?;
     }
 
     Ok(plans.into_inner().unwrap())
@@ -364,6 +430,7 @@ fn plan_crate_generation(
     config: &crate::types::CrateConfig,
     cache: &GrammarCache,
     crates_dir: &Utf8Path,
+    repo_root: &Utf8Path,
     cache_hits: &AtomicUsize,
     cache_misses: &AtomicUsize,
     mode: PlanMode,
@@ -544,11 +611,19 @@ fn plan_grammar_src_generation(
         cache_hits.fetch_add(1, Ordering::Relaxed);
 
         // Print cache hit info
-        let short_key = &cache_key[..16.min(cache_key.len())];
-        let cache_path = cache.cache_dir.join(crate_name).join(short_key);
+        let short_key = &cache_key[..8.min(cache_key.len())];
+        let cache_path = cache
+            .cache_dir
+            .strip_prefix(repo_root)
+            .unwrap_or(&cache.cache_dir)
+            .join(crate_name)
+            .join(short_key);
         println!(
-            "● {} (up-to-date: {}, re-using cache {})",
-            crate_name, short_key, cache_path
+            "● {} ({}: {}, re-using cache {})",
+            crate_name.green(),
+            "up-to-date".green(),
+            short_key,
+            cache_path
         );
 
         let temp_dir = tempfile::tempdir()?;
@@ -564,8 +639,13 @@ fn plan_grammar_src_generation(
 
     // Cache miss - need to generate
     cache_misses.fetch_add(1, Ordering::Relaxed);
-    let short_key = &cache_key[..16.min(cache_key.len())];
-    println!("● {} (cache miss: {}, regenerating)", crate_name, short_key);
+    let short_key = &cache_key[..8.min(cache_key.len())];
+    println!(
+        "● {} ({}: {}, regenerating)",
+        crate_name.yellow(),
+        "cache miss".yellow(),
+        short_key
+    );
 
     // Create a temp directory with same structure as the crate
     // Some grammars have `require('../common/...')` so we need to preserve the relative paths

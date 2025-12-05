@@ -65,6 +65,10 @@ enum Command {
         /// Also updates root Cargo.toml workspace.package.version and workspace.dependencies
         #[facet(args::named)]
         version: String,
+
+        /// Continue processing all crates even if some fail (default: stop on first failure)
+        #[facet(args::named, default)]
+        no_fail_fast: bool,
     },
 
     /// Build and serve the WASM demo locally
@@ -245,6 +249,7 @@ fn main() {
             name,
             dry_run,
             version,
+            no_fail_fast,
         } => {
             use std::time::Instant;
             let total_start = Instant::now();
@@ -264,7 +269,8 @@ fn main() {
             let version = version.as_str();
 
             // Plan and execute generation
-            match generate::plan_generate(&crates_dir, name.as_deref(), mode, version) {
+            match generate::plan_generate(&crates_dir, name.as_deref(), mode, version, no_fail_fast)
+            {
                 Ok(plans) => {
                     if let Err(e) = plans.run(dry_run) {
                         eprintln!("Error: {}", e);
