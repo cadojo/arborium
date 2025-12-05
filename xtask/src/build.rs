@@ -361,6 +361,22 @@ pub fn build_plugins(repo_root: &Utf8Path, options: &BuildOptions) -> Result<()>
         println!("\n{} Saved timings to {}", "✓".green(), timings_path.cyan());
     }
 
+    // Print next steps hint
+    println!();
+    println!("{}", "Next steps:".bold());
+    println!(
+        "  {} {} to publish crates (start with {} then language groups, then {})",
+        "→".blue(),
+        "cargo xtask publish crates".cyan(),
+        "--group pre".yellow(),
+        "--group post".yellow()
+    );
+    println!(
+        "  {} {} to publish npm packages",
+        "→".blue(),
+        "cargo xtask publish npm".cyan()
+    );
+
     Ok(())
 }
 

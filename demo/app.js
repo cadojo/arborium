@@ -2,7 +2,6 @@ import init, { highlight, supported_languages, highlight_names } from './arboriu
 
 // Language metadata and manifest injected by generate-demo
 // {{LANGUAGE_INFO}}
-const pluginManifest = {{PLUGIN_MANIFEST}};
 
 // Examples: maps language id to file extension (e.g. "rust" -> "rs")
 // Content fetched on-demand from /samples/{id}.{ext}

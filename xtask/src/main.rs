@@ -66,6 +66,10 @@ enum Command {
         /// Continue processing all crates even if some fail (default: stop on first failure)
         #[facet(args::named, default)]
         no_fail_fast: bool,
+
+        /// Number of parallel jobs for tree-sitter generation (default: 16)
+        #[facet(args::named, args::short = 'j', default)]
+        jobs: Option<usize>,
     },
 
     /// Build and serve the WASM demo locally
@@ -140,18 +144,36 @@ enum CiAction {
 #[repr(u8)]
 #[allow(dead_code)]
 enum PublishAction {
-    /// Publish all crates to crates.io
+    /// Publish crates to crates.io
+    ///
+    /// Use --group to publish specific groups:
+    /// - pre: shared crates that grammars depend on
+    /// - post: umbrella crates that depend on grammars
+    /// - <group-name>: a specific language group (e.g., cedar, fern, birch)
+    ///
+    /// Without --group, publishes everything in order: pre, then all groups, then post.
     Crates {
         /// Dry run - don't actually publish
         #[facet(args::named, default)]
         dry_run: bool,
+
+        /// Specific group to publish (pre, post, or a group name like cedar)
+        #[facet(args::named, default)]
+        group: Option<String>,
     },
 
-    /// Publish all packages to npm
+    /// Publish packages to npm
+    ///
+    /// Use --group to publish a specific language group (e.g., cedar, fern, birch).
+    /// Without --group, publishes all npm packages.
     Npm {
         /// Dry run - don't actually publish
         #[facet(args::named, default)]
         dry_run: bool,
+
+        /// Specific group to publish (e.g., cedar, fern, birch)
+        #[facet(args::named, default)]
+        group: Option<String>,
     },
 
     /// Publish everything (crates.io + npm)
@@ -202,6 +224,7 @@ fn main() {
             dry_run,
             version,
             no_fail_fast,
+            jobs,
         } => {
             use std::time::Instant;
             let total_start = Instant::now();
@@ -220,9 +243,16 @@ fn main() {
             // Use provided version
             let version = version.as_str();
 
+            let options = generate::GenerateOptions {
+                name: name.as_deref(),
+                mode,
+                version,
+                no_fail_fast,
+                jobs: jobs.unwrap_or(16),
+            };
+
             // Plan and execute generation
-            let result =
-                generate::plan_generate(&crates_dir, name.as_deref(), mode, version, no_fail_fast);
+            let result = generate::plan_generate(&crates_dir, options);
             match result {
                 Ok(plans) => {
                     if let Err(e) = plans.run(dry_run) {
@@ -256,6 +286,17 @@ fn main() {
                 "●".green(),
                 total_elapsed.as_secs_f64()
             );
+
+            // Print next steps hint
+            if !dry_run {
+                println!();
+                println!("{}", "Next steps:".bold());
+                println!(
+                    "  {} {} to build WASM plugins",
+                    "→".blue(),
+                    "cargo xtask build".cyan()
+                );
+            }
         }
         Command::Serve { address, port, dev } => {
             // Check for required tools before starting
@@ -318,15 +359,17 @@ fn main() {
             let repo_root = camino::Utf8PathBuf::from_path_buf(repo_root).expect("non-UTF8 path");
 
             match action {
-                PublishAction::Crates { dry_run } => {
-                    if let Err(e) = publish::publish_crates(&repo_root, dry_run) {
+                PublishAction::Crates { dry_run, group } => {
+                    if let Err(e) = publish::publish_crates(&repo_root, group.as_deref(), dry_run)
+                    {
                         eprintln!("{:?}", e);
                         std::process::exit(1);
                     }
                 }
-                PublishAction::Npm { dry_run } => {
-                    let output_dir = repo_root.join("langs");
-                    if let Err(e) = publish::publish_npm(&repo_root, &output_dir, dry_run) {
+                PublishAction::Npm { dry_run, group } => {
+                    let langs_dir = repo_root.join("langs");
+                    if let Err(e) = publish::publish_npm(&repo_root, &langs_dir, group.as_deref(), dry_run)
+                    {
                         eprintln!("{:?}", e);
                         std::process::exit(1);
                     }
