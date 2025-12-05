@@ -75,7 +75,7 @@ feature flags.
 ### 2. WASM Plugins → npm
 
 - All grammars with `generate-component: true` in
-  `langs/group-{animal}/{lang}/sources/arborium.kdl`
+  `langs/group-{animal}/{lang}/def/arborium.kdl`
 - Built via `cargo-component` for `wasm32-wasip2` from the same group directory
 - Transpiled via `jco` for browser compatibility
 - Published as per-language packages under the `@arborium` scope, e.g.
@@ -126,14 +126,14 @@ immediately to keep versions in lockstep.
 ### Source of Truth vs Generated
 
 The **source of truth** for each language lives under its group and language,
-inside a `sources/` directory. Generated artifacts live next to it as `crate/`
+inside a `def/` directory. Generated artifacts live next to it as `crate/`
 (static Rust crate) and `npm/` (WASM plugin package).
 
 ```
 langs/
 ├── group-squirrel/               (Web languages)
 │   ├── rust/
-│   │   ├── sources/              ← LANGUAGE DEFINITIONS (committed)
+│   │   ├── def/                  ← LANGUAGE DEFINITIONS (committed)
 │   │   │   ├── arborium.kdl      ← SOURCE OF TRUTH
 │   │   │   ├── grammar/
 │   │   │   │   ├── grammar.js    ← tree-sitter grammar
@@ -215,8 +215,8 @@ These crates don't have `arborium.kdl` and are fully hand-written:
 2. **Generates group workspace files:**
    - `langs/group-{animal}/Cargo.toml` with member crates and version "X.Y.Z"
 
-3. **Generates grammar crate files from sources:**
-   - Reads `langs/group-{animal}/{lang}/sources/arborium.kdl` and friends
+3. **Generates grammar crate files from definitions:**
+   - Reads `langs/group-{animal}/{lang}/def/arborium.kdl` and friends
    - Writes `langs/group-{animal}/{lang}/crate/Cargo.toml` with version "X.Y.Z"
    - Writes `build.rs` with correct C compilation setup
    - Writes `src/lib.rs` with language exports
