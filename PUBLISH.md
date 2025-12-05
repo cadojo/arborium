@@ -15,6 +15,18 @@ This means:
 - No chore commits for version bumps
 - Clean, simple workflow
 
+## Core Crates (always present)
+
+```
+crates/
+├── arborium/                  ← main crate with inventory
+├── tree-sitter/               ← fork to avoid upstream build errors
+└── tree-sitter-highlight/     ← fork to avoid upstream build errors
+```
+
+- These are always in the repo (not generated) and are published every release.
+- The tree-sitter forks track upstream but include fixes so CI builds reliably across targets.
+
 ## Release Flow
 
 When you push a tag, here's what happens:
@@ -38,13 +50,13 @@ parse version (v0.3.0 → 0.3.0)
 ┌─────────────────────────────────────────────────────┐
 │           PHASE 2: Group Publishing           │
 ├─────────────────────────────────────────────────────┤
-│ git tag v0.3.0-group-a → publish group-a    │
-│ git tag v0.3.0-group-b → publish group-b    │
-│ git tag v0.3.0-group-c → publish group-c    │
-│ git tag v0.3.0-group-d → publish group-d    │
-│ git tag v0.3.0-group-e → publish group-e    │
-│ git tag v0.3.0-group-f → publish group-f    │
-│ (Can run 2-3 groups in parallel)              │
+│ git tag v0.3.0-squirrel → publish group-squirrel │
+│ git tag v0.3.0-deer     → publish group-deer     │
+│ git tag v0.3.0-fox      → publish group-fox      │
+│ git tag v0.3.0-bear     → publish group-bear     │
+│ git tag v0.3.0-wolf     → publish group-wolf     │
+│ git tag v0.3.0-otter    → publish group-otter    │
+│ (Can run 2-3 groups in parallel)                 │
 └─────────────────────────────────────────────────────┘
        │
        ▼
@@ -74,31 +86,35 @@ parse version (v0.3.0 → 0.3.0)
 
 ### 1. Native Rust Crates → crates.io
 
-- 98 grammar crates organized in 6 groups (`group-a` through `group-f`)
-- Plus core crates (`arborium`, `arborium-collection`, `miette-arborium`, `tree-sitter-*`)
-- Each group publishes independently: `cargo publish --workspace` in group directory
+- 98 grammar crates organized into 6 hand-picked animal groups (e.g., squirrel, deer, fox, bear, wolf, otter)
+- Core crates (`arborium`, `arborium-collection`, `miette-arborium`, `tree-sitter-*`) always published
+- Each group publishes independently from `langs/group-{animal}/` via `cargo publish --workspace`
 - **Retry-safe**: cargo warns and skips already-published versions
 
 ### 2. WASM Plugins → npm
 
-- All grammars with `generate-component: true` in arborium.kdl
-- Built via `cargo-component` for `wasm32-wasip2` from published crates
+- All grammars with `generate-component: true` in `sources/{lang}/arborium.kdl`
+- Built via `cargo-component` for `wasm32-wasip2` from the same group directory
 - Transpiled via `jco` for browser compatibility
 - Published as `@arborium/lang-{grammar}` packages
-- **Published together with crates.io** in same CI build for version sync
+- **Published together with crates.io** in the same per-group CI job for version sync
 
 ## Publishing Strategy
 
-### crates.io (easy)
+- We publish per-group, and each group job handles **both** crates.io and npm together.
+- Groups can run in parallel (e.g., 2-3 at a time) to balance CI load.
+- Core crates (`arborium`, `arborium-collection`, `tree-sitter-*`, `miette-arborium`) publish once per release before groups.
+
+### crates.io (per group)
 
 Cargo handles already-published versions gracefully - it warns and continues:
 ```
 warning: crate arborium-rust@0.3.0 already exists on crates.io
 ```
 
-So we can just retry failed builds and it skips what's done.
+So retrying a group is safe; already-published crates are skipped.
 
-### npm (needs xtask)
+### npm (per group, via xtask)
 
 npm is **not graceful** - it hard-fails with `EPUBLISHCONFLICT`:
 ```
@@ -106,12 +122,12 @@ npm ERR! code EPUBLISHCONFLICT
 npm ERR! Cannot publish over existing version
 ```
 
-**This is why we need `xtask publish`** instead of bash scripts:
-- Must check if version exists before attempting publish
-- Must distinguish `EPUBLISHCONFLICT` (skip, continue) from real errors (fail)
-- Must handle retries properly without re-publishing what succeeded
+**xtask publish** (per group) must:
+- Check if version exists before publishing
+- Distinguish `EPUBLISHCONFLICT` (skip, continue) from real errors (fail)
+- Handle retries without re-publishing successes
 
-The bash approach `npm publish || echo "failed"` **swallows real errors** - unacceptable.
+Each group job builds plugins from its own crates and publishes npm packages immediately to keep versions in lockstep.
 
 ## What's in Git vs Generated
 
