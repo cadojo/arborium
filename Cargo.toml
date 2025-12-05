@@ -1,6 +1,5 @@
 [workspace]
 members = ["xtask"]
-exclude = ["demo"]
 resolver = "3"
 
 # Minimal workspace for now; future generated workspaces

@@ -30,6 +30,7 @@ rayon = "1.10"
 tempfile = "3"
 regex = "1"
 blake3 = "1"
+serde_json = "1"
 
 
 ignore = "0.4"

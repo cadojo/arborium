@@ -1,4 +1,5 @@
-import init, { highlight, supported_languages, highlight_names } from './arborium_demo.js';
+// Arborium Demo - Component-based highlighting
+// Grammars are loaded on demand as WASM components
 
 // Language metadata and manifest injected by generate-demo
 // {{LANGUAGE_INFO}}
@@ -6,6 +7,15 @@ import init, { highlight, supported_languages, highlight_names } from './arboriu
 // Examples: maps language id to file extension (e.g. "rust" -> "rs")
 // Content fetched on-demand from /samples/{id}.{ext}
 const exampleExtensions = {{EXAMPLES}};
+
+// Icons will be injected by generate-demo (SVG strings keyed by iconify name)
+const icons = {{ICONS}};
+
+// Registry loaded from registry.json
+let registry = null;
+
+// Cache for loaded grammar plugins
+const grammarCache = {};
 
 // Cache for fetched sample content
 const examplesCache = {};
@@ -40,8 +50,127 @@ async function fetchExample(langId) {
     }
 }
 
-// Icons will be injected by generate-demo (SVG strings keyed by iconify name)
-const icons = {{ICONS}};
+// Load a grammar plugin on demand
+async function loadGrammar(langId) {
+    // Return cached plugin if available
+    if (grammarCache[langId]) {
+        return grammarCache[langId];
+    }
+
+    // Find in registry
+    const entry = registry?.entries?.find(e => e.language === langId);
+    if (!entry) {
+        throw new Error(`Grammar '${langId}' not found in registry`);
+    }
+
+    // Determine paths based on dev mode
+    const jsPath = registry.dev_mode ? entry.local_js : entry.cdn_js;
+    const wasmPath = registry.dev_mode ? entry.local_wasm : entry.cdn_wasm;
+
+    try {
+        // Import the grammar.js module
+        const module = await import(jsPath);
+
+        // Instantiate with WASM fetch function
+        const instance = await module.instantiate(
+            async () => {
+                const response = await fetch(wasmPath);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch WASM: ${response.status}`);
+                }
+                return WebAssembly.compile(await response.arrayBuffer());
+            },
+            {}
+        );
+
+        // Get the plugin interface
+        const plugin = instance.plugin || instance['arborium:grammar/plugin@0.1.0'];
+        if (!plugin) {
+            throw new Error(`Grammar '${langId}' missing plugin interface`);
+        }
+
+        grammarCache[langId] = plugin;
+        return plugin;
+    } catch (e) {
+        console.error(`Failed to load grammar '${langId}':`, e);
+        throw e;
+    }
+}
+
+// Highlight code using the grammar component
+async function highlightCode(langId, source) {
+    const plugin = await loadGrammar(langId);
+
+    // Create a session
+    const session = plugin.createSession();
+
+    try {
+        // Set the text
+        plugin.setText(session, source);
+
+        // Parse and get spans
+        const result = plugin.parse(session);
+
+        if (result.tag === 'err') {
+            throw new Error(result.val.message);
+        }
+
+        const parseResult = result.val;
+
+        // Convert spans to HTML
+        return spansToHtml(source, parseResult.spans);
+    } finally {
+        // Always free the session
+        plugin.freeSession(session);
+    }
+}
+
+// Convert spans to highlighted HTML
+function spansToHtml(source, spans) {
+    // Sort spans by start position
+    const sortedSpans = [...spans].sort((a, b) => a.start - b.start);
+
+    // Build HTML by processing spans
+    let html = '';
+    let lastEnd = 0;
+
+    for (const span of sortedSpans) {
+        // Add any unhighlighted text before this span
+        if (span.start > lastEnd) {
+            html += escapeHtml(source.slice(lastEnd, span.start));
+        }
+
+        // Add the highlighted span
+        const text = source.slice(span.start, span.end);
+        const className = captureToClass(span.capture);
+        html += `<span class="${className}">${escapeHtml(text)}</span>`;
+
+        lastEnd = Math.max(lastEnd, span.end);
+    }
+
+    // Add any remaining unhighlighted text
+    if (lastEnd < source.length) {
+        html += escapeHtml(source.slice(lastEnd));
+    }
+
+    return html;
+}
+
+// Convert capture name to CSS class
+function captureToClass(capture) {
+    // Map tree-sitter captures to highlight classes
+    return `hl-${capture.replace(/\./g, '-')}`;
+}
+
+// Escape HTML special characters
+function escapeHtml(text) {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+}
 
 let wasmLoaded = false;
 let allLanguages = [];
@@ -331,7 +460,7 @@ async function previewLanguage(id) {
         const output = document.getElementById('output');
         if (source) {
             try {
-                const html = highlight(id, source);
+                const html = await highlightCode(id, source);
                 output.innerHTML = html;
             } catch (e) {
                 // Ignore errors during preview
@@ -812,10 +941,15 @@ if (savedTheme && themeInfo[savedTheme] && themeInfo[savedTheme].variant === cur
 
 async function initialize() {
     try {
-        await init();
-        wasmLoaded = true;
+        // Load the plugins manifest
+        const pluginsResponse = await fetch('/plugins.json');
+        if (!pluginsResponse.ok) {
+            throw new Error(`Failed to load plugins: ${pluginsResponse.status}`);
+        }
+        registry = await pluginsResponse.json();
 
-        allLanguages = supported_languages();
+        // Get list of available languages from registry
+        allLanguages = registry.entries.map(e => e.language);
 
         // Sort by tier (lower is better), then by name
         allLanguages.sort((a, b) => {
@@ -829,6 +963,8 @@ async function initialize() {
             return (infoA.name || a).localeCompare(infoB.name || b);
         });
 
+        wasmLoaded = true;
+
         // Check URL hash for language selection
         const hashLang = window.location.hash.slice(1);
         if (hashLang && allLanguages.includes(hashLang)) {
@@ -839,15 +975,13 @@ async function initialize() {
             selectLanguage(allLanguages[0]);
         }
 
-        // WASM loaded silently
-
     } catch (error) {
-        document.getElementById('output').innerHTML = `<span class="error">Failed to load WASM: ${error}</span>`;
-        updateStatus('Failed to load WASM module', false);
+        document.getElementById('output').innerHTML = `<span class="error">Failed to initialize: ${error}</span>`;
+        updateStatus('Failed to load registry', false);
     }
 }
 
-function doHighlight() {
+async function doHighlight() {
     if (!wasmLoaded || !selectedLang) return;
 
     const source = document.getElementById('source').value;
@@ -860,7 +994,7 @@ function doHighlight() {
 
     try {
         const start = performance.now();
-        const html = highlight(selectedLang, source);
+        const html = await highlightCode(selectedLang, source);
         const elapsed = (performance.now() - start).toFixed(2);
 
         output.innerHTML = html;

@@ -279,6 +279,50 @@ pub fn build_static_site(crates_dir: &Utf8Path, dev: bool) -> Result<(), String>
     Ok(())
 }
 
+/// Generate registry.json and all demo assets (called from build --demo).
+pub fn generate_registry_and_assets(
+    crates_dir: &Utf8Path,
+    demo_dir: &Utf8Path,
+    dev: bool,
+) -> Result<(), String> {
+    let demo_dir_path: &Path = demo_dir.as_std_path();
+
+    let registry = step_with_result("Generating registry.json", || {
+        generate_registry_json(crates_dir, demo_dir_path)
+    });
+
+    step("Generating sample files", || {
+        generate_sample_files(crates_dir, &registry, demo_dir_path)
+    });
+
+    let icons = step_with_result("Fetching icons", || {
+        fetch_icons_from_registry(&registry, demo_dir_path)
+    });
+
+    step("Generating index.html", || {
+        generate_index_html(demo_dir_path, &icons)
+    });
+
+    step("Generating app.generated.js", || {
+        generate_app_js(demo_dir_path, &registry, &icons)
+    });
+
+    // Copy plugins.json from langs/ to demo/, adding dev_mode flag
+    step("Copying plugins.json", || {
+        copy_plugins_json(crates_dir, demo_dir_path, dev)
+    });
+
+    if dev {
+        step("Pre-compressing files (fast)", || {
+            precompress_files_fast(demo_dir_path)
+        });
+    } else {
+        step("Pre-compressing files", || precompress_files(demo_dir_path));
+    }
+
+    Ok(())
+}
+
 fn step<F, E>(name: &str, f: F)
 where
     F: FnOnce() -> Result<(), E>,
@@ -346,6 +390,39 @@ fn generate_sample_files(
             }
         }
     }
+
+    Ok(())
+}
+
+fn copy_plugins_json(crates_dir: &Utf8Path, demo_dir: &Path, dev: bool) -> Result<(), String> {
+    // The plugins.json is generated in langs/ by the build command
+    // We need to go up from crates/ to find langs/
+    let repo_root = crates_dir.parent().ok_or("crates_dir has no parent")?;
+    let plugins_path = repo_root.join("langs").join("plugins.json");
+
+    if !plugins_path.exists() {
+        return Err(format!(
+            "plugins.json not found at {}. Run `cargo xtask build` first.",
+            plugins_path
+        ));
+    }
+
+    // Read and parse the plugins.json
+    let content = fs::read_to_string(&plugins_path).map_err(|e| e.to_string())?;
+
+    // Parse as JSON value so we can modify it
+    let mut json: serde_json::Value =
+        serde_json::from_str(&content).map_err(|e| e.to_string())?;
+
+    // Add dev_mode field
+    if let Some(obj) = json.as_object_mut() {
+        obj.insert("dev_mode".to_string(), serde_json::Value::Bool(dev));
+    }
+
+    // Write to demo directory
+    let output_path = demo_dir.join("plugins.json");
+    let output = serde_json::to_string_pretty(&json).map_err(|e| e.to_string())?;
+    fs::write(&output_path, output).map_err(|e| e.to_string())?;
 
     Ok(())
 }

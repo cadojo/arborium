@@ -87,7 +87,7 @@ enum Command {
         dev: bool,
     },
 
-    /// Build WASM component plugins
+    /// Build WASM component plugins and demo assets
     Build {
         /// Specific grammars to build (build all if omitted)
         #[facet(args::positional, default)]
@@ -108,6 +108,10 @@ enum Command {
         /// Profile build times and write to plugin-timings.json
         #[facet(args::named, default)]
         profile: bool,
+
+        /// Dev mode: use local plugin paths in demo instead of CDN
+        #[facet(args::named, default)]
+        dev: bool,
     },
 
     /// Clean plugin build artifacts (standard layout)
@@ -313,12 +317,17 @@ fn main() {
             jobs,
             no_transpile,
             profile,
+            dev,
         } => {
+            let repo_root = util::find_repo_root().expect("Could not find repo root");
+            let repo_root = camino::Utf8PathBuf::from_path_buf(repo_root).expect("non-UTF8 path");
+
+            // Check for required tools
             if !tool::check_tools_or_report(tool::PLUGIN_TOOLS) {
                 std::process::exit(1);
             }
-            let repo_root = util::find_repo_root().expect("Could not find repo root");
-            let repo_root = camino::Utf8PathBuf::from_path_buf(repo_root).expect("non-UTF8 path");
+
+            // Build plugins
             let options = build::BuildOptions {
                 grammars,
                 group,
@@ -328,6 +337,12 @@ fn main() {
                 jobs: jobs.unwrap_or(16),
             };
             if let Err(e) = build::build_plugins(&repo_root, &options) {
+                eprintln!("{:?}", e);
+                std::process::exit(1);
+            }
+
+            // Generate demo assets
+            if let Err(e) = build::build_demo(&repo_root, &crates_dir, dev) {
                 eprintln!("{:?}", e);
                 std::process::exit(1);
             }

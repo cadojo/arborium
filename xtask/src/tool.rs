@@ -118,9 +118,9 @@ impl Tool {
             Tool::TreeSitter => None, // not available via binstall
             Tool::Git => None,
             Tool::CargoComponent => Some("cargo-component"),
-            Tool::Jco => None,     // npm package, not cargo
-            Tool::WasmOpt => None, // binary release, not cargo
-            Tool::Curl => None,    // system tool, not cargo
+            Tool::Jco => None,      // npm package, not cargo
+            Tool::WasmOpt => None,  // binary release, not cargo
+            Tool::Curl => None,     // system tool, not cargo
         }
     }
 
@@ -282,7 +282,6 @@ mod tests {
     fn test_tool_names() {
         assert_eq!(Tool::TreeSitter.executable_name(), "tree-sitter");
         assert_eq!(Tool::Git.executable_name(), "git");
-        assert_eq!(Tool::WasmPack.executable_name(), "wasm-pack");
         assert_eq!(Tool::CargoComponent.executable_name(), "cargo-component");
         assert_eq!(Tool::Jco.executable_name(), "jco");
     }

@@ -1,4 +1,5 @@
-import init, { highlight, supported_languages, highlight_names } from './arborium_demo.js';
+// Arborium Demo - Component-based highlighting
+// Grammars are loaded on demand as WASM components
 
 // Language metadata and manifest injected by generate-demo
 const languageInfo = {
@@ -1124,39 +1125,6 @@ const exampleExtensions = {
 
 };
 
-// Cache for fetched sample content
-const examplesCache = {};
-
-// Fetch sample content on-demand
-async function fetchExample(langId) {
-    // Return cached content if available
-    if (examplesCache[langId] !== undefined) {
-        return examplesCache[langId];
-    }
-
-    // Check if sample exists
-    const ext = exampleExtensions[langId];
-    if (!ext) {
-        examplesCache[langId] = null;
-        return null;
-    }
-
-    // Fetch from server using actual file extension
-    try {
-        const response = await fetch(`/samples/${langId}.${ext}`);
-        if (!response.ok) {
-            examplesCache[langId] = null;
-            return null;
-        }
-        const content = await response.text();
-        examplesCache[langId] = content;
-        return content;
-    } catch (e) {
-        examplesCache[langId] = null;
-        return null;
-    }
-}
-
 // Icons will be injected by generate-demo (SVG strings keyed by iconify name)
 const icons = {
     "devicon-plain:bash": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 128 128\"><path fill=\"currentColor\" d=\"M112.205 26.129L71.8 2.142A15.3 15.3 0 0 0 64.005 0c-2.688 0-5.386.717-7.796 2.152L15.795 26.14C10.976 28.999 8 34.289 8 40.018v47.975c0 5.729 2.967 11.019 7.796 13.878L56.2 125.858A15.2 15.2 0 0 0 63.995 128a15.3 15.3 0 0 0 7.796-2.142l40.414-23.987c4.819-2.86 7.796-8.16 7.796-13.878V40.007c0-5.718-2.967-11.019-7.796-13.878m-31.29 74.907l.063 3.448c0 .418-.267.889-.588 1.06l-2.046 1.178c-.321.16-.6-.032-.6-.45l-.032-3.394c-1.745.728-3.523.9-4.647.45c-.214-.086-.31-.397-.225-.761l.739-3.116c.064-.246.193-.493.364-.643a.7.7 0 0 1 .193-.139c.117-.064.235-.075.332-.032c1.22.407 2.773.214 4.272-.535c1.907-.964 3.18-2.913 3.16-4.84c-.022-1.757-.964-2.474-3.267-2.496c-2.934.01-5.675-.567-5.718-4.894c-.032-3.555 1.81-7.26 4.744-9.595l-.032-3.48c0-.428.257-.9.589-1.07l1.98-1.264c.322-.161.6.043.6.46l.033 3.48c1.456-.578 2.72-.738 3.865-.47c.247.064.364.406.257.802l-.77 3.084a1.4 1.4 0 0 1-.354.622a.8.8 0 0 1-.203.15c-.108.053-.204.064-.3.053c-.525-.118-1.767-.385-3.727.6c-2.056 1.038-2.773 2.827-2.763 4.155c.022 1.585.825 2.066 3.63 2.11c3.738.064 5.344 1.691 5.387 5.45c.053 3.684-1.917 7.657-4.937 10.077zm21.18-5.794c0 .322-.042.621-.31.771l-10.216 6.211c-.267.161-.482.022-.482-.3V99.29c0-.321.193-.492.46-.653l10.067-6.018c.268-.16.482-.022.482.3zm7.026-58.993L70.89 59.86c-4.765 2.784-8.278 5.911-8.288 11.662v47.107c0 3.437 1.392 5.665 3.523 6.318a13 13 0 0 1-2.12.204c-2.239 0-4.445-.61-6.383-1.757L17.219 99.408c-3.951-2.345-6.403-6.725-6.403-11.426V40.007c0-4.7 2.452-9.08 6.403-11.426L57.634 4.594a12.56 12.56 0 0 1 6.382-1.756c2.238 0 4.444.61 6.382 1.756l40.415 23.987c3.33 1.981 5.579 5.397 6.21 9.242c-1.36-2.86-4.38-3.63-7.902-1.574\"/></svg>",
@@ -1270,6 +1238,167 @@ const icons = {
     "simple-icons:webassembly": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M14.745 0v.129a2.752 2.752 0 1 1-5.504 0V0H0v24h24V0zm-3.291 21.431l-1.169-5.783h-.02l-1.264 5.783H7.39l-1.824-8.497h1.59l1.088 5.783h.02l1.311-5.783h1.487l1.177 5.854h.02l1.242-5.854h1.561l-2.027 8.497zm8.755 0l-.542-1.891h-2.861l-.417 1.891h-1.59l2.056-8.497h2.509l2.5 8.497zm-2.397-6.403l-.694 3.118h2.159l-.796-3.118z\"/></svg>",
     "simple-icons:zig": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"m23.53 1.02l-7.686 3.45h-7.06l-2.98 3.452h7.173L.47 22.98l7.681-3.607h7.065v-.002l2.978-3.45l-7.148-.001l12.482-14.9zM0 4.47v14.901h1.883l2.98-3.45H3.451v-8h.942l2.824-3.45zm22.117 0l-2.98 3.608h1.412v7.844h-.942l-2.98 3.45H24V4.47z\"/></svg>"
 };
+
+// Registry loaded from registry.json
+let registry = null;
+
+// Cache for loaded grammar plugins
+const grammarCache = {};
+
+// Cache for fetched sample content
+const examplesCache = {};
+
+// Fetch sample content on-demand
+async function fetchExample(langId) {
+    // Return cached content if available
+    if (examplesCache[langId] !== undefined) {
+        return examplesCache[langId];
+    }
+
+    // Check if sample exists
+    const ext = exampleExtensions[langId];
+    if (!ext) {
+        examplesCache[langId] = null;
+        return null;
+    }
+
+    // Fetch from server using actual file extension
+    try {
+        const response = await fetch(`/samples/${langId}.${ext}`);
+        if (!response.ok) {
+            examplesCache[langId] = null;
+            return null;
+        }
+        const content = await response.text();
+        examplesCache[langId] = content;
+        return content;
+    } catch (e) {
+        examplesCache[langId] = null;
+        return null;
+    }
+}
+
+// Load a grammar plugin on demand
+async function loadGrammar(langId) {
+    // Return cached plugin if available
+    if (grammarCache[langId]) {
+        return grammarCache[langId];
+    }
+
+    // Find in registry
+    const entry = registry?.entries?.find(e => e.language === langId);
+    if (!entry) {
+        throw new Error(`Grammar '${langId}' not found in registry`);
+    }
+
+    // Determine paths based on dev mode
+    const jsPath = registry.dev_mode ? entry.local_js : entry.cdn_js;
+    const wasmPath = registry.dev_mode ? entry.local_wasm : entry.cdn_wasm;
+
+    try {
+        // Import the grammar.js module
+        const module = await import(jsPath);
+
+        // Instantiate with WASM fetch function
+        const instance = await module.instantiate(
+            async () => {
+                const response = await fetch(wasmPath);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch WASM: ${response.status}`);
+                }
+                return WebAssembly.compile(await response.arrayBuffer());
+            },
+            {}
+        );
+
+        // Get the plugin interface
+        const plugin = instance.plugin || instance['arborium:grammar/plugin@0.1.0'];
+        if (!plugin) {
+            throw new Error(`Grammar '${langId}' missing plugin interface`);
+        }
+
+        grammarCache[langId] = plugin;
+        return plugin;
+    } catch (e) {
+        console.error(`Failed to load grammar '${langId}':`, e);
+        throw e;
+    }
+}
+
+// Highlight code using the grammar component
+async function highlightCode(langId, source) {
+    const plugin = await loadGrammar(langId);
+
+    // Create a session
+    const session = plugin.createSession();
+
+    try {
+        // Set the text
+        plugin.setText(session, source);
+
+        // Parse and get spans
+        const result = plugin.parse(session);
+
+        if (result.tag === 'err') {
+            throw new Error(result.val.message);
+        }
+
+        const parseResult = result.val;
+
+        // Convert spans to HTML
+        return spansToHtml(source, parseResult.spans);
+    } finally {
+        // Always free the session
+        plugin.freeSession(session);
+    }
+}
+
+// Convert spans to highlighted HTML
+function spansToHtml(source, spans) {
+    // Sort spans by start position
+    const sortedSpans = [...spans].sort((a, b) => a.start - b.start);
+
+    // Build HTML by processing spans
+    let html = '';
+    let lastEnd = 0;
+
+    for (const span of sortedSpans) {
+        // Add any unhighlighted text before this span
+        if (span.start > lastEnd) {
+            html += escapeHtml(source.slice(lastEnd, span.start));
+        }
+
+        // Add the highlighted span
+        const text = source.slice(span.start, span.end);
+        const className = captureToClass(span.capture);
+        html += `<span class="${className}">${escapeHtml(text)}</span>`;
+
+        lastEnd = Math.max(lastEnd, span.end);
+    }
+
+    // Add any remaining unhighlighted text
+    if (lastEnd < source.length) {
+        html += escapeHtml(source.slice(lastEnd));
+    }
+
+    return html;
+}
+
+// Convert capture name to CSS class
+function captureToClass(capture) {
+    // Map tree-sitter captures to highlight classes
+    return `hl-${capture.replace(/\./g, '-')}`;
+}
+
+// Escape HTML special characters
+function escapeHtml(text) {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+}
 
 let wasmLoaded = false;
 let allLanguages = [];
@@ -1559,7 +1688,7 @@ async function previewLanguage(id) {
         const output = document.getElementById('output');
         if (source) {
             try {
-                const html = highlight(id, source);
+                const html = await highlightCode(id, source);
                 output.innerHTML = html;
             } catch (e) {
                 // Ignore errors during preview
@@ -2040,10 +2169,15 @@ if (savedTheme && themeInfo[savedTheme] && themeInfo[savedTheme].variant === cur
 
 async function initialize() {
     try {
-        await init();
-        wasmLoaded = true;
+        // Load the plugins manifest
+        const pluginsResponse = await fetch('/plugins.json');
+        if (!pluginsResponse.ok) {
+            throw new Error(`Failed to load plugins: ${pluginsResponse.status}`);
+        }
+        registry = await pluginsResponse.json();
 
-        allLanguages = supported_languages();
+        // Get list of available languages from registry
+        allLanguages = registry.entries.map(e => e.language);
 
         // Sort by tier (lower is better), then by name
         allLanguages.sort((a, b) => {
@@ -2057,6 +2191,8 @@ async function initialize() {
             return (infoA.name || a).localeCompare(infoB.name || b);
         });
 
+        wasmLoaded = true;
+
         // Check URL hash for language selection
         const hashLang = window.location.hash.slice(1);
         if (hashLang && allLanguages.includes(hashLang)) {
@@ -2067,15 +2203,13 @@ async function initialize() {
             selectLanguage(allLanguages[0]);
         }
 
-        // WASM loaded silently
-
     } catch (error) {
-        document.getElementById('output').innerHTML = `<span class="error">Failed to load WASM: ${error}</span>`;
-        updateStatus('Failed to load WASM module', false);
+        document.getElementById('output').innerHTML = `<span class="error">Failed to initialize: ${error}</span>`;
+        updateStatus('Failed to load registry', false);
     }
 }
 
-function doHighlight() {
+async function doHighlight() {
     if (!wasmLoaded || !selectedLang) return;
 
     const source = document.getElementById('source').value;
@@ -2088,7 +2222,7 @@ function doHighlight() {
 
     try {
         const start = performance.now();
-        const html = highlight(selectedLang, source);
+        const html = await highlightCode(selectedLang, source);
         const elapsed = (performance.now() - start).toFixed(2);
 
         output.innerHTML = html;

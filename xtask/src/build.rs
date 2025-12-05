@@ -393,6 +393,40 @@ pub fn clean_plugins(repo_root: &Utf8Path, output_dir: &str) -> Result<()> {
     Ok(())
 }
 
+/// Generate demo assets (registry.json, samples, HTML, JS).
+///
+/// The demo loads grammar WASM components on demand - it doesn't need
+/// a monolithic WASM build. This just generates the static assets.
+pub fn build_demo(repo_root: &Utf8Path, crates_dir: &Utf8Path, dev: bool) -> Result<()> {
+    let demo_dir = repo_root.join("demo");
+
+    println!(
+        "{} {}",
+        "==>".cyan().bold(),
+        "Generating demo assets".bold()
+    );
+    if dev {
+        println!("    {}", "(dev mode - using local plugin paths)".dimmed());
+    }
+    println!();
+
+    // Generate registry.json and assets
+    crate::serve::generate_registry_and_assets(crates_dir, &demo_dir, dev)
+        .map_err(|e| miette::miette!("Failed to generate assets: {}", e))?;
+
+    // Print next steps
+    println!();
+    println!("{}", "Next steps:".bold());
+    println!(
+        "  {} {} to serve the demo locally",
+        "→".blue(),
+        "cargo xtask serve".cyan()
+    );
+
+    Ok(())
+}
+
+
 fn build_single_plugin(
     repo_root: &Utf8Path,
     registry: &CrateRegistry,
