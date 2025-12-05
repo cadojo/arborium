@@ -17,12 +17,9 @@ use owo_colors::OwoColorize;
 use rayon::prelude::*;
 use rootcause::Report;
 use sailfish::TemplateSimple;
-use std::io::{IsTerminal, Write};
 use std::process::Stdio;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex};
-use std::thread;
-use std::time::Duration;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Mutex;
 
 // Sailfish templates - compiled at build time
 #[derive(TemplateSimple)]
@@ -75,17 +72,6 @@ struct ReadmeTemplate<'a> {
     inventor: &'a str,
     year: u16,
     language_link: &'a str,
-}
-
-/// Context for build operations - contains shared state and configuration
-struct BuildContext<'a> {
-    cache: &'a GrammarCache,
-    crates_dir: &'a Utf8Path,
-    repo_root: &'a Utf8Path,
-    cache_hits: &'a AtomicUsize,
-    cache_misses: &'a AtomicUsize,
-    mode: PlanMode,
-    workspace_version: &'a str,
 }
 
 /// Update root Cargo.toml with the specified version
@@ -173,47 +159,13 @@ fn generate_workspace_dependencies(
 }
 
 /// Generate crate files for all or a specific grammar.
-// New 5-function approach for testing
-pub fn plan_generate_new_approach(
-    crates_dir: &Utf8Path,
-    name: Option<&str>,
-    mode: PlanMode,
-    version: &str,
-    no_fail_fast: bool,
-) -> Result<PlanSet, Report> {
-    use std::time::Instant;
-    let total_start = Instant::now();
-
-    // 1. Load Registry
-    let registry = load_registry_new(crates_dir)?;
-
-    // 2. Prepare temp structures (SHARED by validation & generation)
-    let prepared = prepare_temp_structures_new(&registry, crates_dir, name, version)?;
-
-    if prepared.prepared_temps.is_empty() {
-        println!("No grammars to process");
-        return Ok(PlanSet::new());
-    }
-
-    // 3. Validate all grammars using prepared structures
-    validate_all_grammars_new(&prepared)?;
-
-    // 4. Generate all grammars using same prepared structures
-    let generation_results = generate_all_grammars_new(&prepared, mode, no_fail_fast)?;
-
-    // 5. Generate all crates using templates
-    let plan_set = generate_all_crates_new(&prepared, &generation_results)?;
-
-    let total_elapsed = total_start.elapsed();
-    println!("Total time: {:.2}s", total_elapsed.as_secs_f64());
-    println!(
-        "Cache hits: {}, misses: {}",
-        generation_results.cache_hits, generation_results.cache_misses
-    );
-
-    Ok(plan_set)
-}
-
+///
+/// This follows the 5-function generation flow from generate.md:
+/// 1. Load registry
+/// 2. Prepare temp structures (SHARED by validation & generation)
+/// 3. Validate all grammars
+/// 4. Generate all grammars (tree-sitter)
+/// 5. Generate all crates (Cargo.toml, lib.rs, etc.)
 pub fn plan_generate(
     crates_dir: &Utf8Path,
     name: Option<&str>,
@@ -224,441 +176,34 @@ pub fn plan_generate(
     use std::time::Instant;
     let total_start = Instant::now();
 
-    // Note: lint is run by main.rs before and after calling this function
-    let registry_start = Instant::now();
-    let registry = CrateRegistry::load(crates_dir)?;
-    let registry_elapsed = registry_start.elapsed();
+    // 1. Load Registry
+    let registry = load_registry(crates_dir)?;
 
-    // Set up grammar cache
-    let repo_root =
-        find_repo_root().ok_or_else(|| std::io::Error::other("Could not find repo root"))?;
-    let repo_root = Utf8PathBuf::from_path_buf(repo_root)
-        .map_err(|_| std::io::Error::other("Non-UTF8 repo root"))?;
-    let cache = GrammarCache::new(&repo_root);
+    // 2. Prepare temp structures (SHARED by validation & generation)
+    let prepared = prepare_temp_structures(&registry, crates_dir, name, version)?;
 
-    // Update root Cargo.toml with the specified version
-    update_root_cargo_toml(&repo_root, version)?;
-
-    // Generate [workspace.dependencies] from registry
-    generate_workspace_dependencies(&repo_root, &registry, version)?;
-
-    // Use the provided version for generated Cargo.toml files
-    let workspace_version = version.to_string();
-
-    // Track cache stats
-    let cache_hits = AtomicUsize::new(0);
-    let cache_misses = AtomicUsize::new(0);
-
-    // Collect crates to process (respecting filter)
-    let crates_to_process: Vec<_> = registry
-        .crates
-        .iter()
-        .filter(|(_name, crate_state)| {
-            // Skip if a specific name was requested and this isn't it
-            if let Some(filter) = name {
-                let matches = crate_state.name == filter
-                    || (crate_state.name.strip_prefix("arborium-") == Some(filter));
-                if !matches {
-                    return false;
-                }
-            }
-            // Skip crates without arborium.kdl
-            crate_state.config.is_some()
-        })
-        .collect();
-
-    if crates_to_process.is_empty() {
+    if prepared.prepared_temps.is_empty() {
+        println!("No grammars to process");
         return Ok(PlanSet::new());
     }
 
-    // Pre-generation grammar validation - validate ALL grammars with grammar.js
-    println!("{}", "Validating grammar requires...".cyan().bold());
-    for (_name, crate_state) in &crates_to_process {
-        if let Some(config) = &crate_state.config {
-            validate_grammar_requires(crate_state, config, crates_dir)?;
-        }
-    }
-    println!("{} All grammar requires validated", "✓".green());
-    println!();
+    // 3. Validate all grammars using prepared structures
+    validate_all_grammars(&prepared)?;
 
-    // Store length before potentially consuming the vector
-    let num_crates_to_process = crates_to_process.len();
+    // 4. Generate all grammars using same prepared structures
+    let generation_results = generate_all_grammars(&prepared, mode, no_fail_fast)?;
 
-    // Check if we're in a terminal (for spinners) or CI (for plain output)
-    let is_tty = std::io::stdout().is_terminal();
+    // 5. Generate all crates using templates
+    let plan_set = generate_all_crates(&prepared, &generation_results)?;
 
-    // Set up multi-progress for parallel spinners (only used in TTY mode)
-    // No longer using spinners for fast operations
-
-    // Thread-safe collection for plans and errors
-    let plans = Mutex::new(PlanSet::new());
-    let errors: Mutex<Vec<(String, Report)>> = Mutex::new(Vec::new());
-
-    // Process crates in parallel - always parallel, but handle errors differently
-    if no_fail_fast {
-        // Parallel processing - collect all errors
-        crates_to_process
-            .par_iter()
-            .for_each(|(_name, crate_state)| {
-                let config = crate_state.config.as_ref().unwrap();
-                let crate_name = &crate_state.name;
-
-                // Check if this crate has a grammar to generate
-                let grammar_dir = crate_state.path.join("grammar");
-                let needs_generation =
-                    grammar_dir.exists() && grammar_dir.join("grammar.js").exists();
-
-                // Track timing for slow operations
-                let start_time = std::time::Instant::now();
-
-                // Progress is shown later in cache miss/hit messages
-
-                let ctx = BuildContext {
-                    cache: &cache,
-                    crates_dir,
-                    repo_root: &repo_root,
-                    cache_hits: &cache_hits,
-                    cache_misses: &cache_misses,
-                    mode,
-                    workspace_version: &workspace_version,
-                };
-
-                match plan_crate_generation(crate_state, config, &ctx) {
-                    Ok(plan) => {
-                        if !plan.is_empty() {
-                            plans.lock().unwrap().add(plan);
-                        }
-
-                        // Show completion message for slow operations (>1s) in TTY mode
-                        let elapsed = start_time.elapsed();
-                        if needs_generation && is_tty && elapsed.as_secs() >= 1 {
-                            println!(
-                                "{} {} completed in {:.1}s",
-                                "●".green(),
-                                crate_name,
-                                elapsed.as_secs_f64()
-                            );
-                        }
-                    }
-                    Err(e) => {
-                        // Collect error - don't fail fast
-                        if needs_generation {
-                            println!("{} {} {}", "●".red(), "✗".red(), crate_name);
-                        }
-                        errors.lock().unwrap().push((crate_name.clone(), e));
-                    }
-                }
-            });
-    } else {
-        // Parallel processing with fail-fast - exit process immediately on first error
-        crates_to_process
-            .par_iter()
-            .for_each(|(_name, crate_state)| {
-                let config = crate_state.config.as_ref().unwrap();
-                let crate_name = &crate_state.name;
-
-                // Check if this crate has a grammar to generate
-                let grammar_dir = crate_state.path.join("grammar");
-                let needs_generation =
-                    grammar_dir.exists() && grammar_dir.join("grammar.js").exists();
-
-                // Track timing for slow operations
-                let start_time = std::time::Instant::now();
-
-                let ctx = BuildContext {
-                    cache: &cache,
-                    crates_dir,
-                    repo_root: &repo_root,
-                    cache_hits: &cache_hits,
-                    cache_misses: &cache_misses,
-                    mode,
-                    workspace_version: &workspace_version,
-                };
-
-                match plan_crate_generation(crate_state, config, &ctx) {
-                    Ok(plan) => {
-                        if !plan.is_empty() {
-                            plans.lock().unwrap().add(plan);
-                        }
-
-                        // Show completion message for slow operations (>1s) in TTY mode
-                        let elapsed = start_time.elapsed();
-                        if needs_generation && is_tty && elapsed.as_secs() >= 1 {
-                            println!(
-                                "{} {} completed in {:.1}s",
-                                "●".green(),
-                                crate_name,
-                                elapsed.as_secs_f64()
-                            );
-                        }
-                    }
-                    Err(e) => {
-                        // Fail fast - show error and exit process immediately
-                        if needs_generation {
-                            println!("{} ✗ {}", "●".red(), crate_name);
-                        }
-                        eprintln!("Error: {}: {}", crate_name.bold(), e);
-                        std::process::exit(1);
-                    }
-                }
-            });
-    }
-
-    let processing_elapsed = total_start.elapsed();
-
-    // Print timing and cache stats
-    let hits = cache_hits.load(Ordering::Relaxed);
-    let misses = cache_misses.load(Ordering::Relaxed);
-    let total_cached = hits + misses;
-    let cache_hit_rate = if total_cached > 0 {
-        (hits as f64 / total_cached as f64) * 100.0
-    } else {
-        0.0
-    };
-
-    println!();
-    println!("{}", "=".repeat(80));
-    println!("{} Generation Summary", "●".cyan().bold());
-    println!("{}", "=".repeat(80));
-
-    // What was processed
+    let total_elapsed = total_start.elapsed();
+    println!("Total time: {:.2}s", total_elapsed.as_secs_f64());
     println!(
-        "{} Processed: {} crates",
-        "●".cyan(),
-        num_crates_to_process.to_string().bold()
+        "Cache hits: {}, misses: {}",
+        generation_results.cache_hits, generation_results.cache_misses
     );
 
-    // Detailed timing breakdown
-    let generation_time = (processing_elapsed - registry_elapsed).as_secs_f64();
-
-    println!(
-        "{} Total time: {:.2}s",
-        "●".cyan(),
-        processing_elapsed.as_secs_f64().to_string().bold()
-    );
-    println!(
-        "  - Registry loading: {:.2}s ({:.1}%)",
-        registry_elapsed.as_secs_f64(),
-        (registry_elapsed.as_secs_f64() / processing_elapsed.as_secs_f64()) * 100.0
-    );
-    println!(
-        "  - Generation phase: {:.2}s ({:.1}%)",
-        generation_time,
-        (generation_time / processing_elapsed.as_secs_f64()) * 100.0
-    );
-    println!("    - includes: tree-sitter CLI, file templating, cache operations");
-
-    // Cache statistics
-    if total_cached > 0 {
-        println!("{} Cache performance:", "●".green().bold());
-        println!(
-            "  - {} hits ({:.1}%)",
-            hits.to_string().green().bold(),
-            cache_hit_rate
-        );
-        println!(
-            "  - {} misses ({:.1}%)",
-            misses.to_string().yellow().bold(),
-            100.0 - cache_hit_rate
-        );
-        println!("  - Time saved: ~{:.1}s (estimated)", hits as f64 * 2.0); // rough estimate
-
-        if hits > 0 {
-            println!("  {} Grammar files restored from cache", "✓".green());
-        }
-        if misses > 0 {
-            println!(
-                "  {} Grammar files regenerated with tree-sitter CLI",
-                "⚡".yellow()
-            );
-        }
-    }
-
-    // Recommend next commands based on results (following PUBLISH.md process)
-    println!();
-    println!("{} Recommended next steps:", "💡".bright_yellow().bold());
-
-    if hits > 0 && misses == 0 {
-        println!(
-            "  {} All grammars were cached - run tests to verify:",
-            "●".green()
-        );
-        println!("    {}", "cargo nextest run".bold());
-        println!(
-            "  {} Or serve the demo to test syntax highlighting:",
-            "●".cyan()
-        );
-        println!("    {}", "cargo xtask serve".bold());
-    } else if misses > 0 {
-        println!(
-            "  {} New grammars generated - verify with tests:",
-            "●".yellow()
-        );
-        println!("    {}", "cargo nextest run".bold());
-        println!("  {} Build WASM components for web demos:", "●".blue());
-        println!("    {}", "cargo xtask plugins".bold());
-        println!("  {} Test syntax highlighting in browser:", "●".cyan());
-        println!("    {}", "cargo xtask serve".bold());
-        println!();
-        println!(
-            "  {} Ready to release? Follow the PUBLISH.md process:",
-            "●".green().bold()
-        );
-        println!("    {}", "# 1. Tag and push core release".dimmed());
-        println!("    {}", "cargo xtask tag --core".bold());
-        println!("    {}", "# 2. Tag and push groups one by one".dimmed());
-        println!("    {}", "cargo xtask tag --group squirrel".bold());
-        println!("    {}", "cargo xtask tag --group deer".bold());
-        println!("    {}", "# ... (repeat for other groups)".dimmed());
-    } else {
-        println!(
-            "  {} No changes needed - you're up to date! 🎉",
-            "●".green()
-        );
-        println!("  {} Run tests to verify everything works:", "●".cyan());
-        println!("    {}", "cargo nextest run".bold());
-    }
-
-    // Check for errors - only relevant in no-fail-fast mode
-    // (In fail-fast mode, we would have already returned with the first error)
-    if no_fail_fast {
-        let errors = errors.into_inner().unwrap();
-        if !errors.is_empty() {
-            eprintln!();
-            for (crate_name, error) in &errors {
-                eprintln!("Error: {}: {}", crate_name.bold(), error);
-            }
-            Err(std::io::Error::other(format!(
-                "{} grammar(s) failed to generate",
-                errors.len()
-            )))?;
-        }
-    }
-
-    Ok(plans.into_inner().unwrap())
-}
-
-fn plan_crate_generation(
-    crate_state: &CrateState,
-    config: &crate::types::CrateConfig,
-    ctx: &BuildContext,
-) -> Result<Plan, Report> {
-    let mut plan = Plan::for_crate(&crate_state.name);
-    let def_path = &crate_state.def_path;
-    let crate_path = &crate_state.crate_path;
-
-    // Ensure crate directory exists
-    if !crate_path.exists() {
-        plan.add(Operation::CreateDir {
-            path: crate_path.to_owned(),
-            description: "Create crate directory".to_string(),
-        });
-    }
-
-    // Generate Cargo.toml
-    let cargo_toml_path = crate_path.join("Cargo.toml");
-    let new_cargo_toml = generate_cargo_toml(&crate_state.name, config, ctx.workspace_version);
-
-    if cargo_toml_path.exists() {
-        let old_content = fs::read_to_string(&cargo_toml_path)?;
-        if old_content != new_cargo_toml {
-            plan.add(Operation::UpdateFile {
-                path: cargo_toml_path,
-                old_content: Some(old_content),
-                new_content: new_cargo_toml,
-                description: "Update Cargo.toml".to_string(),
-            });
-        }
-    } else {
-        plan.add(Operation::CreateFile {
-            path: cargo_toml_path,
-            content: new_cargo_toml,
-            description: "Create Cargo.toml".to_string(),
-        });
-    }
-
-    // Generate build.rs
-    let build_rs_path = crate_path.join("build.rs");
-    let new_build_rs = generate_build_rs(&crate_state.name, config);
-
-    if build_rs_path.exists() {
-        let old_content = fs::read_to_string(&build_rs_path)?;
-        if old_content != new_build_rs {
-            plan.add(Operation::UpdateFile {
-                path: build_rs_path,
-                old_content: Some(old_content),
-                new_content: new_build_rs,
-                description: "Update build.rs".to_string(),
-            });
-        }
-    } else {
-        plan.add(Operation::CreateFile {
-            path: build_rs_path,
-            content: new_build_rs,
-            description: "Create build.rs".to_string(),
-        });
-    }
-
-    // Generate README.md
-    let readme_path = crate_path.join("README.md");
-    let new_readme = generate_readme(&crate_state.name, config);
-
-    if readme_path.exists() {
-        let old_content = fs::read_to_string(&readme_path)?;
-        if old_content != new_readme {
-            plan.add(Operation::UpdateFile {
-                path: readme_path,
-                old_content: Some(old_content),
-                new_content: new_readme,
-                description: "Update README.md".to_string(),
-            });
-        }
-    } else {
-        plan.add(Operation::CreateFile {
-            path: readme_path,
-            content: new_readme,
-            description: "Create README.md".to_string(),
-        });
-    }
-
-    // Generate src/lib.rs
-    let lib_rs_path = crate_path.join("src/lib.rs");
-    let new_lib_rs = generate_lib_rs(&crate_state.name, def_path, config);
-
-    if lib_rs_path.exists() {
-        let old_content = fs::read_to_string(&lib_rs_path)?;
-        if old_content != new_lib_rs {
-            plan.add(Operation::UpdateFile {
-                path: lib_rs_path,
-                old_content: Some(old_content),
-                new_content: new_lib_rs,
-                description: "Update src/lib.rs".to_string(),
-            });
-        }
-    } else {
-        // Ensure src/ directory exists
-        let src_dir = crate_path.join("src");
-        if !src_dir.exists() {
-            plan.add(Operation::CreateDir {
-                path: src_dir,
-                description: "Create src directory".to_string(),
-            });
-        }
-        plan.add(Operation::CreateFile {
-            path: lib_rs_path,
-            content: new_lib_rs,
-            description: "Create src/lib.rs".to_string(),
-        });
-    }
-
-    // Generate grammar/src/ from vendored grammar sources in def/
-    let grammar_dir = def_path.join("grammar");
-
-    if grammar_dir.exists() && grammar_dir.join("grammar.js").exists() {
-        plan_grammar_src_generation(&mut plan, def_path, config, ctx)?;
-    }
-
-    Ok(plan)
+    Ok(plan_set)
 }
 
 /// Get the cross-grammar dependencies for a grammar.
@@ -736,158 +281,6 @@ fn setup_grammar_dependencies(
             copy_dir_contents(&grammar_dir, &target_dir)?;
         }
     }
-
-    Ok(())
-}
-
-/// Plan the generation of grammar/src/ by running tree-sitter generate in a temp directory.
-fn plan_grammar_src_generation(
-    plan: &mut Plan,
-    def_path: &Utf8Path,
-    config: &crate::types::CrateConfig,
-    ctx: &BuildContext,
-) -> Result<(), Report> {
-    let grammar_dir = def_path.join("grammar");
-    let dest_src_dir = grammar_dir.join("src");
-    let crate_name = def_path
-        .parent()
-        .and_then(|p| p.file_name())
-        .unwrap_or("unknown");
-
-    // Compute cache key from input files
-    let cache_key = ctx
-        .cache
-        .compute_cache_key(def_path, ctx.crates_dir, config)?;
-
-    // Check cache first
-    if let Some(cached) = ctx.cache.get(crate_name, &cache_key) {
-        // Cache hit! Extract to a temp dir first, then plan updates
-        ctx.cache_hits.fetch_add(1, Ordering::Relaxed);
-
-        // Print cache hit info
-        let short_key = &cache_key[..8.min(cache_key.len())];
-        let cache_path = ctx
-            .cache
-            .cache_dir
-            .strip_prefix(ctx.repo_root)
-            .unwrap_or(&ctx.cache.cache_dir)
-            .join(crate_name)
-            .join(short_key);
-        println!(
-            "● {} ({}: {}, re-using cache {})",
-            crate_name.green(),
-            "up-to-date".green(),
-            short_key,
-            cache_path
-        );
-
-        let temp_dir = tempfile::tempdir()?;
-        let temp_src = Utf8PathBuf::from_path_buf(temp_dir.path().to_path_buf())
-            .map_err(|_| std::io::Error::other("Non-UTF8 temp path"))?;
-
-        cached.extract_to(&temp_src)?;
-
-        // Plan updates from cached files
-        plan_updates_from_generated(&mut *plan, &temp_src, &dest_src_dir, ctx.mode)?;
-        return Ok(());
-    }
-
-    // Cache miss - need to generate
-    ctx.cache_misses.fetch_add(1, Ordering::Relaxed);
-    let short_key = &cache_key[..8.min(cache_key.len())];
-    println!(
-        "● {} ({}: {}, regenerating)",
-        crate_name.yellow(),
-        "cache miss".yellow(),
-        short_key
-    );
-
-    // Create a temp directory with same structure as the crate
-    // Some grammars have `require('../common/...')` so we need to preserve the relative paths
-    let temp_dir = tempfile::tempdir()?;
-    let temp_root = Utf8PathBuf::from_path_buf(temp_dir.path().to_path_buf())
-        .map_err(|_| std::io::Error::other("Non-UTF8 temp path"))?;
-
-    // Copy grammar/ to temp/grammar/
-    let temp_grammar = temp_root.join("grammar");
-    copy_dir_contents(&grammar_dir, &temp_grammar)?;
-
-    // Copy common/ to temp/common/ if it exists (some grammars share code via ../common/)
-    // Check both def/common (shared at language level) and def/grammar/common (local to grammar)
-    let def_common_dir = def_path.join("common");
-    let grammar_common_dir = def_path.join("grammar/common");
-
-    if def_common_dir.exists() {
-        let temp_common = temp_root.join("common");
-        copy_dir_contents(&def_common_dir, &temp_common)?;
-    }
-
-    if grammar_common_dir.exists() {
-        let temp_grammar_common = temp_grammar.join("common");
-        copy_dir_contents(&grammar_common_dir, &temp_grammar_common)?;
-    }
-
-    // Set up cross-grammar dependencies if needed (in temp/grammar/node_modules/)
-    setup_grammar_dependencies(&temp_grammar, ctx.crates_dir, config)?;
-
-    // Create src/ directory for grammars that generate files there (e.g., vim's keywords.h)
-    fs::create_dir_all(temp_grammar.join("src"))?;
-
-    // Run tree-sitter generate in the temp/grammar directory
-    let tree_sitter = Tool::TreeSitter.find()?;
-
-    // Start progress reporting for slow operations
-    let start_time = std::time::Instant::now();
-    let crate_name_for_progress = crate_name.to_string();
-    let should_stop = Arc::new(AtomicBool::new(false));
-    let should_stop_clone = should_stop.clone();
-
-    let progress_handle = thread::spawn(move || {
-        loop {
-            thread::sleep(Duration::from_secs(5));
-            if should_stop_clone.load(Ordering::Relaxed) {
-                break;
-            }
-            let elapsed = start_time.elapsed().as_secs();
-            print!("{} ({}s) ", crate_name_for_progress, elapsed);
-            let _ = std::io::stdout().flush();
-        }
-    });
-
-    let output = tree_sitter
-        .command()
-        .args(["generate"])
-        .current_dir(&temp_grammar)
-        .stdout(Stdio::null())
-        .stderr(Stdio::piped())
-        .output()?;
-
-    // Stop progress reporting
-    should_stop.store(true, Ordering::Relaxed);
-    let _ = progress_handle.join();
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        // Show more context for debugging
-        let error_lines: Vec<&str> = stderr.lines().take(20).collect();
-        Err(std::io::Error::other(format!(
-            "tree-sitter generate failed for {}:\n{}",
-            crate_name,
-            error_lines.join("\n")
-        )))?;
-    }
-
-    // The generated files are in temp/grammar/src/
-    let generated_src = temp_grammar.join("src");
-
-    // Save to cache for next time
-    if let Err(e) = ctx.cache.save(crate_name, &cache_key, &generated_src) {
-        // Cache save failure is not fatal, just log it
-        eprintln!("Warning: failed to cache {}: {}", crate_name, e);
-    }
-
-    // Plan updates from generated files
-    plan_updates_from_generated(plan, &generated_src, &dest_src_dir, ctx.mode)?;
 
     Ok(())
 }
@@ -1008,84 +401,6 @@ fn plan_file_update(
             description: format!("Create {}", description),
         });
     }
-    Ok(())
-}
-
-/// Validate grammar.js require() statements by running Node.js with dummy globals
-fn validate_grammar_requires(
-    crate_state: &CrateState,
-    config: &crate::types::CrateConfig,
-    crates_dir: &Utf8Path,
-) -> Result<(), Report> {
-    let grammar_js = crate_state.def_path.join("grammar/grammar.js");
-
-    if !grammar_js.exists() {
-        return Ok(());
-    }
-
-    // Create temp directory with grammar and dependencies set up
-    let temp_dir = tempfile::tempdir()?;
-    let temp_root = Utf8PathBuf::from_path_buf(temp_dir.path().to_path_buf())
-        .map_err(|_| std::io::Error::other("Non-UTF8 temp path"))?;
-    let temp_grammar = temp_root.join("grammar");
-
-    // Copy grammar files to temp
-    let def_path = &crate_state.def_path;
-    let grammar_dir = def_path.join("grammar");
-    copy_dir_contents(&grammar_dir, &temp_grammar)?;
-
-    // Copy common/ to temp/common/ if it exists (some grammars share code via ../common/)
-    // Check both def/common (shared at language level) and def/grammar/common (local to grammar)
-    let def_common_dir = def_path.join("common");
-    let grammar_common_dir = def_path.join("grammar/common");
-
-    if def_common_dir.exists() {
-        let temp_common = temp_root.join("common");
-        copy_dir_contents(&def_common_dir, &temp_common)?;
-    }
-
-    if grammar_common_dir.exists() {
-        let temp_common = temp_root.join("common");
-        copy_dir_contents(&grammar_common_dir, &temp_common)?;
-    }
-
-    // Set up cross-grammar dependencies
-    setup_grammar_dependencies(&temp_grammar, crates_dir, config)?;
-
-    // Create wrapper script
-    let wrapper_path = temp_dir.path().join("validate_grammar.js");
-    let temp_grammar_js = temp_grammar.join("grammar.js");
-
-    let escaped_path = temp_grammar_js.as_str().replace('\\', "\\\\");
-    let template = ValidateGrammarTemplate {
-        grammar_path: &escaped_path,
-    };
-    let wrapper_content = template
-        .render_once()
-        .map_err(|e| std::io::Error::other(format!("Template render error: {}", e)))?;
-
-    fs::write(&wrapper_path, wrapper_content)?;
-
-    // Run Node.js on the wrapper
-    let output = std::process::Command::new("node")
-        .arg(&wrapper_path)
-        .current_dir(&temp_root)
-        .output()
-        .map_err(|e| std::io::Error::other(format!("Failed to run node: {}", e)))?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(std::io::Error::other(format!(
-            "Grammar validation failed for {}: {}",
-            crate_state
-                .name
-                .strip_prefix("arborium-")
-                .unwrap_or(&crate_state.name),
-            stderr.trim()
-        ))
-        .into());
-    }
-
     Ok(())
 }
 
@@ -1268,11 +583,7 @@ fn generate_readme(crate_name: &str, config: &crate::types::CrateConfig) -> Stri
         .expect("ReadmeTemplate render failed")
 }
 
-// ============================================================================
-// NEW 5-FUNCTION GENERATION FLOW (eliminates temp directory duplication)
-// ============================================================================
-
-// Data structures for prepared temp directories
+// Data structures for temp directory preparation (shared by validation & generation)
 struct PreparedTemp {
     crate_state: CrateState,
     temp_dir: tempfile::TempDir,
@@ -1286,7 +597,6 @@ struct PreparedStructures {
     repo_root: Utf8PathBuf,
     cache: GrammarCache,
     workspace_version: String,
-    crates_to_process: Vec<String>,
 }
 
 struct GenerationResults {
@@ -1296,12 +606,12 @@ struct GenerationResults {
 }
 
 // 1. Load Registry
-fn load_registry_new(crates_dir: &Utf8Path) -> Result<CrateRegistry, Report> {
+fn load_registry(crates_dir: &Utf8Path) -> Result<CrateRegistry, Report> {
     CrateRegistry::load(crates_dir)
 }
 
 // 2. Prepare Temp Structures (SHARED by validation & generation)
-fn prepare_temp_structures_new(
+fn prepare_temp_structures(
     registry: &CrateRegistry,
     crates_dir: &Utf8Path,
     name: Option<&str>,
@@ -1318,33 +628,22 @@ fn prepare_temp_structures_new(
     update_root_cargo_toml(&repo_root, version)?;
     generate_workspace_dependencies(&repo_root, &registry, version)?;
 
-    // Collect crates to process (respecting filter)
-    let crates_to_process: Vec<String> = registry
-        .crates
-        .iter()
-        .filter_map(|(crate_name, crate_state)| {
-            // Skip if a specific name was requested and this isn't it
-            if let Some(filter) = name {
-                let matches = crate_state.name == filter
-                    || (crate_state.name.strip_prefix("arborium-") == Some(filter));
-                if !matches {
-                    return None;
-                }
-            }
-            // Skip crates without arborium.kdl
-            if crate_state.config.is_none() {
-                return None;
-            }
-            Some(crate_name.clone())
-        })
-        .collect();
-
     // Prepare temp directories for all crates that have grammar.js files
     let mut prepared_temps = Vec::new();
 
-    for crate_name in &crates_to_process {
-        let crate_state = &registry.crates[crate_name];
-        let config = crate_state.config.as_ref().unwrap().clone();
+    for (_crate_name, crate_state) in &registry.crates {
+        // Skip if a specific name was requested and this isn't it
+        if let Some(filter) = name {
+            let matches = crate_state.name == filter
+                || (crate_state.name.strip_prefix("arborium-") == Some(filter));
+            if !matches {
+                continue;
+            }
+        }
+        // Skip crates without arborium.kdl
+        let Some(config) = crate_state.config.clone() else {
+            continue;
+        };
         let grammar_js = crate_state.def_path.join("grammar/grammar.js");
 
         if !grammar_js.exists() {
@@ -1394,16 +693,15 @@ fn prepare_temp_structures_new(
         repo_root,
         cache,
         workspace_version: version.to_string(),
-        crates_to_process,
     })
 }
 
 // 3. Validate All Grammars using prepared structures
-fn validate_all_grammars_new(prepared: &PreparedStructures) -> Result<(), Report> {
+fn validate_all_grammars(prepared: &PreparedStructures) -> Result<(), Report> {
     println!("{}", "Validating grammar requires...".cyan().bold());
 
     for prepared_temp in &prepared.prepared_temps {
-        validate_single_grammar_new(prepared_temp)?;
+        validate_single_grammar(prepared_temp)?;
     }
 
     println!("{} All grammar requires validated", "✓".green());
@@ -1411,7 +709,7 @@ fn validate_all_grammars_new(prepared: &PreparedStructures) -> Result<(), Report
     Ok(())
 }
 
-fn validate_single_grammar_new(prepared_temp: &PreparedTemp) -> Result<(), Report> {
+fn validate_single_grammar(prepared_temp: &PreparedTemp) -> Result<(), Report> {
     // Create wrapper script
     let wrapper_path = prepared_temp.temp_dir.path().join("validate_grammar.js");
     let temp_grammar_js = prepared_temp.temp_grammar.join("grammar.js");
@@ -1448,7 +746,7 @@ fn validate_single_grammar_new(prepared_temp: &PreparedTemp) -> Result<(), Repor
 }
 
 // 4. Generate All Grammars using same prepared structures
-fn generate_all_grammars_new(
+fn generate_all_grammars(
     prepared: &PreparedStructures,
     mode: PlanMode,
     no_fail_fast: bool,
@@ -1461,8 +759,12 @@ fn generate_all_grammars_new(
     // Process grammars in parallel using prepared temp directories
     let process_grammar = |prepared_temp: &PreparedTemp| {
         let crate_name = &prepared_temp.crate_state.name;
-        let result =
-            plan_grammar_generation_with_prepared_temp(prepared_temp, &prepared.cache, mode);
+        let result = plan_grammar_generation_with_prepared_temp(
+            prepared_temp,
+            &prepared.cache,
+            &prepared.repo_root,
+            mode,
+        );
 
         match result {
             Ok((plan, hit)) => {
@@ -1518,41 +820,73 @@ fn generate_all_grammars_new(
 fn plan_grammar_generation_with_prepared_temp(
     prepared_temp: &PreparedTemp,
     cache: &GrammarCache,
+    repo_root: &Utf8Path,
     mode: PlanMode,
 ) -> Result<(Plan, bool), Report> {
     let crate_name = &prepared_temp.crate_state.name;
-    let crate_path = &prepared_temp.crate_state.path;
-    let config = &prepared_temp.config;
+    let def_path = &prepared_temp.crate_state.def_path;
 
     // Use the already prepared temp directory instead of creating a new one
     let temp_root = &prepared_temp.temp_root;
     let temp_grammar = &prepared_temp.temp_grammar;
 
-    // Check cache first
-    let cache_key = cache.compute_cache_key(
-        &prepared_temp.crate_state.def_path,
-        crate_path,
-        &prepared_temp.config,
-    )?;
+    // Destination is grammar/src/ under the definition path
+    let dest_src_dir = def_path.join("grammar/src");
+
+    // Compute cache key
+    // Note: compute_cache_key takes (def_path, crates_dir, config) but we only need def_path and config
+    // The crates_dir is used for dependency resolution which is already handled in prepared temps
+    let crates_dir = repo_root.join("crates");
+    let cache_key = cache.compute_cache_key(def_path, &crates_dir, &prepared_temp.config)?;
+
+    let short_key = &cache_key[..8.min(cache_key.len())];
+
     if let Some(cached_files) = cache.get(crate_name, &cache_key) {
-        // Cache hit - extract to crate
-        let temp_src = temp_root.join("src");
+        // Cache hit - extract to a temp location first, then plan updates
+        let temp_src = temp_root.join("cached_src");
         cached_files.extract_to(&temp_src)?;
 
-        let mut plan = Plan::new();
-        plan_updates_from_generated(&mut plan, crate_path, &temp_src, mode)?;
+        let cache_path = cache
+            .cache_dir
+            .strip_prefix(repo_root)
+            .unwrap_or(&cache.cache_dir)
+            .join(crate_name)
+            .join(short_key);
+        println!(
+            "● {} ({}: {}, re-using cache {})",
+            crate_name.green(),
+            "up-to-date".green(),
+            short_key,
+            cache_path
+        );
+
+        let mut plan = Plan::for_crate(crate_name);
+        plan_updates_from_generated(&mut plan, &temp_src, &dest_src_dir, mode)?;
 
         return Ok((plan, true)); // true = cache hit
     }
 
     // Cache miss - run tree-sitter generate in the prepared temp directory
-    let output = std::process::Command::new("tree-sitter")
-        .arg("generate")
-        .current_dir(temp_grammar) // Use temp_grammar directory like the original
-        .stdout(Stdio::piped())
+    println!(
+        "● {} ({}: {}, regenerating)",
+        crate_name.yellow(),
+        "cache miss".yellow(),
+        short_key
+    );
+
+    // Create src/ directory for grammars that generate files there
+    fs::create_dir_all(temp_grammar.join("src"))?;
+
+    // Run tree-sitter generate
+    let tree_sitter = Tool::TreeSitter.find()?;
+
+    let output = tree_sitter
+        .command()
+        .args(["generate"])
+        .current_dir(temp_grammar)
+        .stdout(Stdio::null())
         .stderr(Stdio::piped())
-        .output()
-        .map_err(|e| std::io::Error::other(format!("Failed to run tree-sitter: {}", e)))?;
+        .output()?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -1565,46 +899,156 @@ fn plan_grammar_generation_with_prepared_temp(
         .into());
     }
 
-    // Cache the generated files
-    let src_dir = temp_grammar.join("src");
-    if src_dir.exists() {
-        cache.save(crate_name, &cache_key, &src_dir)?;
+    // The generated files are in temp/grammar/src/
+    let generated_src = temp_grammar.join("src");
+
+    // Save to cache for next time
+    if let Err(e) = cache.save(crate_name, &cache_key, &generated_src) {
+        eprintln!("Warning: failed to cache {}: {}", crate_name, e);
     }
 
     // Plan file updates
-    let mut plan = Plan::new();
-    plan_updates_from_generated(&mut plan, crate_path, &src_dir, mode)?;
+    let mut plan = Plan::for_crate(crate_name);
+    plan_updates_from_generated(&mut plan, &generated_src, &dest_src_dir, mode)?;
 
     Ok((plan, false)) // false = cache miss
 }
 
-// 5. Generate All Crates using templates
-fn generate_all_crates_new(
+// 5. Generate All Crates using templates (Cargo.toml, build.rs, lib.rs, README.md)
+// NOTE: This does NOT run tree-sitter - grammar generation is done in step 4
+fn generate_all_crates(
     prepared: &PreparedStructures,
     generation_results: &GenerationResults,
 ) -> Result<PlanSet, Report> {
     let mut final_plan = generation_results.plans.clone();
 
-    // Generate crate files for all prepared crates
+    // Generate crate files (Cargo.toml, build.rs, lib.rs, README.md) for all crates
     for prepared_temp in &prepared.prepared_temps {
         let crate_state = &prepared_temp.crate_state;
         let config = &prepared_temp.config;
 
-        // Generate Cargo.toml, build.rs, lib.rs, README.md using the existing function
-        let build_context = BuildContext {
-            cache: &prepared.cache,
-            crates_dir: &Utf8PathBuf::from("crates"), // Will be replaced by proper path
-            repo_root: &prepared.repo_root,
-            workspace_version: &prepared.workspace_version,
-            cache_hits: &AtomicUsize::new(0),
-            cache_misses: &AtomicUsize::new(0),
-            mode: PlanMode::Execute,
-        };
-
-        // Generate the crate plan and add it to final plan
-        let crate_plan = plan_crate_generation(crate_state, config, &build_context)?;
+        let crate_plan =
+            plan_crate_files_only(crate_state, config, &prepared.workspace_version)?;
         final_plan.add(crate_plan);
     }
 
     Ok(final_plan)
+}
+
+/// Generate only the Rust crate files (Cargo.toml, build.rs, lib.rs, README.md)
+/// This does NOT run tree-sitter generate - that's handled separately in step 4.
+fn plan_crate_files_only(
+    crate_state: &CrateState,
+    config: &crate::types::CrateConfig,
+    workspace_version: &str,
+) -> Result<Plan, Report> {
+    let mut plan = Plan::for_crate(&crate_state.name);
+    let def_path = &crate_state.def_path;
+    let crate_path = &crate_state.crate_path;
+
+    // Ensure crate directory exists
+    if !crate_path.exists() {
+        plan.add(Operation::CreateDir {
+            path: crate_path.to_owned(),
+            description: "Create crate directory".to_string(),
+        });
+    }
+
+    // Generate Cargo.toml
+    let cargo_toml_path = crate_path.join("Cargo.toml");
+    let new_cargo_toml = generate_cargo_toml(&crate_state.name, config, workspace_version);
+
+    if cargo_toml_path.exists() {
+        let old_content = fs::read_to_string(&cargo_toml_path)?;
+        if old_content != new_cargo_toml {
+            plan.add(Operation::UpdateFile {
+                path: cargo_toml_path,
+                old_content: Some(old_content),
+                new_content: new_cargo_toml,
+                description: "Update Cargo.toml".to_string(),
+            });
+        }
+    } else {
+        plan.add(Operation::CreateFile {
+            path: cargo_toml_path,
+            content: new_cargo_toml,
+            description: "Create Cargo.toml".to_string(),
+        });
+    }
+
+    // Generate build.rs
+    let build_rs_path = crate_path.join("build.rs");
+    let new_build_rs = generate_build_rs(&crate_state.name, config);
+
+    if build_rs_path.exists() {
+        let old_content = fs::read_to_string(&build_rs_path)?;
+        if old_content != new_build_rs {
+            plan.add(Operation::UpdateFile {
+                path: build_rs_path,
+                old_content: Some(old_content),
+                new_content: new_build_rs,
+                description: "Update build.rs".to_string(),
+            });
+        }
+    } else {
+        plan.add(Operation::CreateFile {
+            path: build_rs_path,
+            content: new_build_rs,
+            description: "Create build.rs".to_string(),
+        });
+    }
+
+    // Generate README.md
+    let readme_path = crate_path.join("README.md");
+    let new_readme = generate_readme(&crate_state.name, config);
+
+    if readme_path.exists() {
+        let old_content = fs::read_to_string(&readme_path)?;
+        if old_content != new_readme {
+            plan.add(Operation::UpdateFile {
+                path: readme_path,
+                old_content: Some(old_content),
+                new_content: new_readme,
+                description: "Update README.md".to_string(),
+            });
+        }
+    } else {
+        plan.add(Operation::CreateFile {
+            path: readme_path,
+            content: new_readme,
+            description: "Create README.md".to_string(),
+        });
+    }
+
+    // Generate src/lib.rs
+    let lib_rs_path = crate_path.join("src/lib.rs");
+    let new_lib_rs = generate_lib_rs(&crate_state.name, def_path, config);
+
+    if lib_rs_path.exists() {
+        let old_content = fs::read_to_string(&lib_rs_path)?;
+        if old_content != new_lib_rs {
+            plan.add(Operation::UpdateFile {
+                path: lib_rs_path,
+                old_content: Some(old_content),
+                new_content: new_lib_rs,
+                description: "Update src/lib.rs".to_string(),
+            });
+        }
+    } else {
+        // Ensure src/ directory exists
+        let src_dir = crate_path.join("src");
+        if !src_dir.exists() {
+            plan.add(Operation::CreateDir {
+                path: src_dir,
+                description: "Create src directory".to_string(),
+            });
+        }
+        plan.add(Operation::CreateFile {
+            path: lib_rs_path,
+            content: new_lib_rs,
+            description: "Create src/lib.rs".to_string(),
+        });
+    }
+
+    Ok(plan)
 }
