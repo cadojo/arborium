@@ -2244,3 +2244,42 @@ footer a:hover {
     font-style: italic;
 }
 
+/* Get Started section */
+.get-started-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.get-started-option h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 0 0 0.5rem 0;
+}
+
+.get-started-option p {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+}
+
+.get-started-option p:last-child {
+    margin-bottom: 0;
+}
+
+.code-block {
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    border: 1px solid color-mix(in srgb, var(--fg) 15%, transparent);
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    margin: 0.5rem 0;
+    overflow-x: auto;
+    font-family: 'Iosevka', 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.code-block code {
+    white-space: pre;
+}
+

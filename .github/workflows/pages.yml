@@ -7,6 +7,7 @@ on:
     paths:
       - 'demo/**'
       - 'crates/**'
+      - 'langs/**'
       - 'Cargo.toml'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
@@ -21,7 +22,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  generate:
+  build:
     runs-on: depot-ubuntu-24.04-32
     container: ghcr.io/bearcove/arborium-plugin-builder:latest
     steps:
@@ -31,61 +32,38 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .cache/arborium
-          key: grammar-cache-${{ hashFiles('crates/*/grammar/grammar.js', 'crates/*/grammar/package.json', 'crates/*/common/**') }}
+          key: grammar-cache-v4-${{ hashFiles('langs/group-*/*/def/grammar/grammar.js', 'langs/group-*/*/def/grammar/package.json') }}
           restore-keys: |
-            grammar-cache-
+            grammar-cache-v4-
 
       - name: Generate grammar sources
-        run: arborium-xtask gen
+        run: arborium-xtask gen --version 0.2.0
 
-      - name: Create grammar sources tarball
-        run: |
-          find crates -type d -name 'src' -path '*/grammar/src' > grammar_dirs.txt
-          tar -cvf grammar-sources.tar -T grammar_dirs.txt
+      - name: Build WASM plugins
+        run: arborium-xtask build
 
-      - name: Upload grammar sources
-        uses: actions/upload-artifact@v4
-        with:
-          name: grammar-sources
-          path: grammar-sources.tar
-          retention-days: 1
-
-  build:
-    needs: generate
-    runs-on: depot-ubuntu-24.04-16
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download grammar sources
-        uses: actions/download-artifact@v4
-        with:
-          name: grammar-sources
-
-      - name: Extract grammar sources
-        run: tar -xvf grammar-sources.tar
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Install wasm-pack
-        uses: taiki-e/install-action@v2
-        with:
-          tool: wasm-pack
-
-      - name: Build WASM package
-        run: |
-          cd demo
-          wasm-pack build --target web --release
+      - name: Build demo assets
+        run: arborium-xtask build --demo
 
       - name: Prepare pages directory
         run: |
           mkdir -p _site
           cp demo/index.html _site/
+          cp demo/styles.css _site/
+          cp demo/registry.json _site/
+          cp demo/plugins.json _site/
+          cp demo/*.woff2 _site/
           cp -r demo/pkg _site/
+          cp -r demo/samples _site/
+          # Copy WASM plugins
+          mkdir -p _site/plugins
+          if [ -d demo/plugins ]; then
+            cp -r demo/plugins/* _site/plugins/ 2>/dev/null || true
+          fi
+          # Also check dist/plugins for built WASM files
+          if [ -d dist/plugins ]; then
+            cp -r dist/plugins/* _site/plugins/ 2>/dev/null || true
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
