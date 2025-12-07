@@ -1,5 +1,5 @@
 [workspace]
-members = ["xtask"]
+members = ["xtask", "crates/arborium"]
 resolver = "3"
 
 # Minimal workspace for now; future generated workspaces
