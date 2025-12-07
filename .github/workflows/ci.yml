@@ -147,7 +147,7 @@ jobs:
 
       - 
         name: Build arborium for WASM
-        run: cargo build -p arborium --target wasm32-unknown-unknown
+        run: cargo build --manifest-path crates/arborium/Cargo.toml --target wasm32-unknown-unknown --no-default-features
       - 
         name: Check for env imports in WASM
         run: "found_env_imports=false\nfor wasm_file in $(find target/wasm32-unknown-unknown -name \"*.wasm\" -type f); do\n  if wasm-objdump -j Import -x \"$wasm_file\" 2>/dev/null | grep -q '<- env\\.'; then\n    echo \"ERROR: Found env imports in $wasm_file:\"\n    wasm-objdump -j Import -x \"$wasm_file\" | grep '<- env\\.'\n    found_env_imports=true\n  fi\ndone\nif [ \"$found_env_imports\" = true ]; then\n  echo \"WASM modules should not have env imports - these won't work in the browser\"\n  exit 1\nfi\necho \"No env imports found - WASM modules are browser-compatible\""

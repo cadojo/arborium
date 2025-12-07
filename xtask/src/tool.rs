@@ -11,6 +11,7 @@ use thiserror::Error;
 
 /// External tools that xtask depends on.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum Tool {
     /// tree-sitter CLI for generating parsers
     TreeSitter,
@@ -20,7 +21,7 @@ pub enum Tool {
     CargoComponent,
     /// jco for transpiling WASM components to JS
     Jco,
-    /// wasm-opt for optimizing WASM files
+    /// wasm-opt for optimizing WASM files (optional, for future use)
     WasmOpt,
     /// curl for HTTP requests
     Curl,
@@ -29,8 +30,8 @@ pub enum Tool {
 /// Tools needed for `cargo xtask gen` (generation).
 pub const GEN_TOOLS: &[Tool] = &[Tool::TreeSitter, Tool::Git];
 
-/// Tools needed for `cargo xtask plugins` (WASM component plugins).
-pub const PLUGIN_TOOLS: &[Tool] = &[Tool::CargoComponent, Tool::Jco, Tool::WasmOpt];
+/// Tools needed for `cargo xtask build` (WASM component plugins).
+pub const PLUGIN_TOOLS: &[Tool] = &[Tool::CargoComponent, Tool::Jco];
 
 /// Tools needed for `cargo xtask serve` (demo assets fetch).
 pub const SERVE_TOOLS: &[Tool] = &[Tool::Curl];

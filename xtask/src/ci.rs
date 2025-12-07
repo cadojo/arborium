@@ -464,7 +464,7 @@ echo "Version: $VERSION (release: $IS_RELEASE)""#,
                 download_grammar_sources(),
                 Step::run(
                     "Build arborium for WASM",
-                    "cargo build -p arborium --target wasm32-unknown-unknown",
+                    "cargo build --manifest-path crates/arborium/Cargo.toml --target wasm32-unknown-unknown --no-default-features",
                 ),
                 Step::run(
                     "Check for env imports in WASM",

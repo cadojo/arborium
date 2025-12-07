@@ -68,18 +68,16 @@ fn run_streaming(
     let stdout_thread = thread::spawn(move || {
         let reader = BufReader::new(stdout);
         for line in reader.lines() {
-            if let Ok(line) = line {
-                printer_out.print_line(&grammar_out, &line, false);
-            }
+            let Ok(line) = line else { break };
+            printer_out.print_line(&grammar_out, &line, false);
         }
     });
 
     let stderr_thread = thread::spawn(move || {
         let reader = BufReader::new(stderr);
         for line in reader.lines() {
-            if let Ok(line) = line {
-                printer_err.print_line(&grammar_err, &line, true);
-            }
+            let Ok(line) = line else { break };
+            printer_err.print_line(&grammar_err, &line, true);
         }
     });
 

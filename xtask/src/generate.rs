@@ -769,12 +769,12 @@ fn prepare_temp_structures(
     version_store::write_version(&repo_root, version)
         .map_err(|e| rootcause::Report::new(std::io::Error::other(e.to_string())))?;
     update_root_cargo_toml(&repo_root, version)?;
-    generate_workspace_dependencies(&repo_root, &registry, version)?;
+    generate_workspace_dependencies(&repo_root, registry, version)?;
 
     // Prepare temp directories for all crates that have grammar.js files
     let mut prepared_temps = Vec::new();
 
-    for (_crate_name, crate_state) in &registry.crates {
+    for crate_state in registry.crates.values() {
         // Skip if a specific name was requested and this isn't it
         if let Some(filter) = name {
             let matches = crate_state.name == filter
@@ -1228,7 +1228,7 @@ fn plan_plugin_crate_files(
     repo_root: &Utf8Path,
     workspace_version: &str,
 ) -> Result<Plan, Report> {
-    let mut plan = Plan::for_crate(&format!("{}-plugin", &crate_state.name));
+    let mut plan = Plan::for_crate(format!("{}-plugin", crate_state.name));
 
     // Check if any grammar has generate-component enabled
     let grammar = config.grammars.first();
