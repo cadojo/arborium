@@ -439,13 +439,13 @@ fn plan_updates_from_generated(
 
         // Ensure npm/grammar/src/tree_sitter/ directory exists
         let npm_tree_sitter = npm_src_dir.as_ref().map(|p| p.join("tree_sitter"));
-        if let Some(ref npm_ts) = npm_tree_sitter {
-            if !npm_ts.exists() {
-                plan.add(Operation::CreateDir {
-                    path: npm_ts.to_owned(),
-                    description: "Create npm/grammar/src/tree_sitter directory".to_string(),
-                });
-            }
+        if let Some(ref npm_ts) = npm_tree_sitter
+            && !npm_ts.exists()
+        {
+            plan.add(Operation::CreateDir {
+                path: npm_ts.to_owned(),
+                description: "Create npm/grammar/src/tree_sitter directory".to_string(),
+            });
         }
 
         // Copy each file in tree_sitter/
