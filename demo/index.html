@@ -44,7 +44,7 @@
                 </div>
             </aside>
 
-            <div class="editor-container">
+            <div class="editor-container" id="demo">
                 <div class="panel">
                     <div class="editor-toolbar">
                         <div class="toolbar-controls">
@@ -95,8 +95,18 @@
 
         <div id="status" class="status"></div>
 
+        <nav class="section-nav" id="section-nav">
+            <a href="#demo" class="nav-link active">Demo</a>
+            <a href="#about" class="nav-link">About</a>
+            <a href="#get-started" class="nav-link">Get Started</a>
+            <a href="#integrations" class="nav-link">Integrations</a>
+            <a href="#languages" class="nav-link">Languages</a>
+            <a href="#themes" class="nav-link">Themes</a>
+            <a href="#faq" class="nav-link">FAQ</a>
+        </nav>
+
         <div class="cards-container">
-            <div class="about-card solution">
+            <div class="about-card solution" id="about">
                 <h3>arborium</h3>
                 <p>Finding good tree-sitter grammars is hard. In arborium, every grammar:</p>
                 <ul class="check-list">
@@ -158,19 +168,26 @@
                 </div>
             </div>
 
-            <div class="about-card">
+            <div class="about-card" id="get-started">
                 <h3>Get Started</h3>
                 <div class="get-started-options">
                     <div class="get-started-option">
                         <h4>Script tag (zero config)</h4>
                         <p>Add this to your HTML and all <code>&lt;pre&gt;&lt;code&gt;</code> blocks get highlighted automatically:</p>
                         <pre class="code-block"><code><a-tg>&lt;script</a-tg> <a-at>src</a-at><a-p>=</a-p><a-s>"https://cdn.jsdelivr.net/npm/@arborium/arborium@{{VERSION}}/dist/arborium.iife.js"</a-s><a-tg>&gt;&lt;/script&gt;</a-tg></code></pre>
-                        <p>Language is detected from <code>class="language-rust"</code>, <code>data-lang="rust"</code>, or auto-detected from content.</p>
+                        <p>Your code blocks should look like this:</p>
+                        <pre class="code-block"><code><a-tg>&lt;pre&gt;&lt;code</a-tg> <a-at>class</a-at><a-p>=</a-p><a-s>"language-rust"</a-s><a-tg>&gt;</a-tg>fn main() {}<a-tg>&lt;/code&gt;&lt;/pre&gt;</a-tg>
+<a-c>&lt;!-- or --&gt;</a-c>
+<a-tg>&lt;pre&gt;&lt;code</a-tg> <a-at>data-lang</a-at><a-p>=</a-p><a-s>"rust"</a-s><a-tg>&gt;</a-tg>fn main() {}<a-tg>&lt;/code&gt;&lt;/pre&gt;</a-tg>
+<a-c>&lt;!-- or just let it auto-detect --&gt;</a-c>
+<a-tg>&lt;pre&gt;&lt;code&gt;</a-tg>fn main() {}<a-tg>&lt;/code&gt;&lt;/pre&gt;</a-tg></code></pre>
                         <p>Configure via data attributes:</p>
                         <pre class="code-block"><code><a-tg>&lt;script</a-tg> <a-at>src</a-at><a-p>=</a-p><a-s>"..."</a-s>
-  <a-at>data-theme</a-at><a-p>=</a-p><a-s>"github-light"</a-s>
-  <a-at>data-selector</a-at><a-p>=</a-p><a-s>"pre code, .highlight"</a-s>
-  <a-at>data-version</a-at><a-p>=</a-p><a-s>"{{VERSION}}"</a-s><a-tg>&gt;&lt;/script&gt;</a-tg></code></pre>
+  <a-at>data-theme</a-at><a-p>=</a-p><a-s>"github-light"</a-s>      <a-c>&lt;!-- theme name --&gt;</a-c>
+  <a-at>data-selector</a-at><a-p>=</a-p><a-s>"pre code"</a-s>        <a-c>&lt;!-- CSS selector --&gt;</a-c>
+  <a-at>data-manual</a-at>                     <a-c>&lt;!-- disable auto-highlight --&gt;</a-c>
+  <a-at>data-cdn</a-at><a-p>=</a-p><a-s>"unpkg"</a-s><a-tg>&gt;&lt;/script&gt;</a-tg>       <a-c>&lt;!-- jsdelivr | unpkg | custom URL --&gt;</a-c></code></pre>
+                        <p>With <code>data-manual</code>, call <code>window.arborium.highlightAll()</code> when ready.</p>
                     </div>
                     <div class="get-started-option">
                         <h4>Rust (native or WASM)</h4>
@@ -190,7 +207,38 @@
                 </div>
             </div>
 
-            <div class="about-card">
+            <div class="about-card" id="integrations">
+                <h3>Integrations</h3>
+                <div class="integrations-grid">
+                    <div class="integration-item">
+                        <h4><svg  width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M11 15h2v2h-2zm0-8h2v6h-2zm1-5C6.47 2 2 6.5 2 12a10 10 0 0 0 10 10a10 10 0 0 0 10-10A10 10 0 0 0 12 2m0 18a8 8 0 0 1-8-8a8 8 0 0 1 8-8a8 8 0 0 1 8 8a8 8 0 0 1-8 8"/></svg> miette-arborium</h4>
+                        <p>Syntax highlighting for <a href="https://crates.io/crates/miette">miette</a> error diagnostics. Beautiful, accurate highlighting in your CLI error messages.</p>
+                        <pre class="code-block"><code><a-k>use</a-k> miette<a-p>::</a-p>GraphicalReportHandler<a-p>;</a-p>
+<a-k>use</a-k> miette_arborium<a-p>::</a-p>ArboriumHighlighter<a-p>;</a-p>
+
+<a-k>let</a-k> handler <a-o>=</a-o> GraphicalReportHandler<a-p>::</a-p>new()
+    <a-p>.</a-p>with_syntax_highlighting(ArboriumHighlighter<a-p>::</a-p>new())<a-p>;</a-p></code></pre>
+                        <p class="integration-links">
+                            <a href="https://crates.io/crates/miette-arborium">crates.io</a> ·
+                            <a href="https://docs.rs/miette-arborium">docs.rs</a>
+                        </p>
+                    </div>
+                    <div class="integration-item">
+                        <h4><svg  width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M12 22A10 10 0 0 1 2 12A10 10 0 0 1 12 2c5.5 0 10 4 10 9a6 6 0 0 1-6 6h-1.8c-.3 0-.5.2-.5.5c0 .1.1.2.1.3c.4.5.6 1.1.6 1.7c.1 1.4-1 2.5-2.4 2.5m0-18a8 8 0 0 0-8 8a8 8 0 0 0 8 8c.3 0 .5-.2.5-.5c0-.2-.1-.3-.1-.4c-.4-.5-.6-1-.6-1.6c0-1.4 1.1-2.5 2.5-2.5H16a4 4 0 0 0 4-4c0-3.9-3.6-7-8-7m-5.5 6c.8 0 1.5.7 1.5 1.5S7.3 13 6.5 13S5 12.3 5 11.5S5.7 10 6.5 10m3-4c.8 0 1.5.7 1.5 1.5S10.3 9 9.5 9S8 8.3 8 7.5S8.7 6 9.5 6m5 0c.8 0 1.5.7 1.5 1.5S15.3 9 14.5 9S13 8.3 13 7.5S13.7 6 14.5 6m3 4c.8 0 1.5.7 1.5 1.5s-.7 1.5-1.5 1.5s-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5"/></svg> arborium-theme</h4>
+                        <p>Theme definitions for arborium. Load themes from TOML files or use one of 13+ built-in themes (Catppuccin, Dracula, Tokyo Night, etc.)</p>
+                        <pre class="code-block"><code><a-k>use</a-k> arborium<a-p>::</a-p>theme<a-p>::</a-p>builtin<a-p>;</a-p>
+
+<a-k>let</a-k> theme <a-o>=</a-o> builtin<a-p>::</a-p>dracula()<a-p>;</a-p>
+<a-k>let</a-k> html <a-o>=</a-o> arborium<a-p>::</a-p>highlight(<a-s>"rust"</a-s>, code, theme)<a-p>;</a-p></code></pre>
+                        <p class="integration-links">
+                            <a href="https://crates.io/crates/arborium-theme">crates.io</a> ·
+                            <a href="https://docs.rs/arborium-theme">docs.rs</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="about-card" id="languages">
                 <h3>Languages</h3>
                 <p>
                     <strong id="lang-count">90+</strong> languages included, each behind a feature flag.
@@ -205,7 +253,7 @@
                 </p>
             </div>
 
-            <div class="about-card">
+            <div class="about-card" id="themes">
                 <h3>Theme support</h3>
                 <p>
                     The highlighter supports themes for both <strong>HTML</strong> and <strong>ANSI</strong> output.
@@ -381,7 +429,7 @@
                 </p>
             </div>
 
-            <div class="about-card faq">
+            <div class="about-card faq" id="faq">
                 <h3>FAQ</h3>
                 <div class="faq-item">
                     <h4><span class="faq-icon"><svg  width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M16 16.92c-.33.05-.66.08-1 .08s-.67-.03-1-.08v-3.51l-2.5 2.48c-.5-.39-1-.89-1.39-1.39l2.48-2.5H9.08c-.05-.33-.08-.66-.08-1s.03-.67.08-1h3.51l-2.48-2.5c.19-.25.39-.5.65-.74c.24-.26.49-.46.74-.65L14 8.59V5.08c.33-.05.66-.08 1-.08s.67.03 1 .08v3.51l2.5-2.48c.5.39 1 .89 1.39 1.39L17.41 10h3.51c.05.33.08.66.08 1s-.03.67-.08 1h-3.51l2.48 2.5c-.19.25-.39.5-.65.74c-.24.26-.49.46-.74.65L16 13.41zM5 19a2 2 0 0 1 2-2a2 2 0 0 1 2 2a2 2 0 0 1-2 2a2 2 0 0 1-2-2"/></svg></span>Why not highlight.js or Shiki?</h4>
@@ -424,6 +472,7 @@
                     <h4><span class="faq-icon"><svg  width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="m12 17.56l4.07-1.13l.55-6.1H9.38L9.2 8.3h7.6l.2-1.99H7l.56 6.01h6.89l-.23 2.58l-2.22.6l-2.22-.6l-.14-1.66h-2l.29 3.19zM4.07 3h15.86L18.5 19.2L12 21l-6.5-1.8z"/></svg></span>Can I use this without Rust / just embed it on my website?</h4>
                     <div class="faq-answer">
                         <p>Yes! Use our npm package <code>@arborium/arborium</code>. It provides both an ESM module and an IIFE bundle that auto-highlights code blocks on your page.</p>
+                        <p>The IIFE bundle exposes <code>window.arborium</code> with methods like <code>highlightAll()</code>, <code>highlightElement(el, lang)</code>, and <code>detectLanguage(source)</code>.</p>
                         <p>See the "Get Started" section above for details.</p>
                     </div>
                 </div>
@@ -447,5 +496,54 @@
     </div>
 
     <script type="module" src="pkg/app.generated.js"></script>
+    <script>
+        // Section navigation - highlight active section on scroll
+        (function() {
+            const nav = document.getElementById('section-nav');
+            const links = nav.querySelectorAll('.nav-link');
+            const sections = [];
+
+            links.forEach(link => {
+                const id = link.getAttribute('href').slice(1);
+                const section = document.getElementById(id);
+                if (section) sections.push({ id, el: section, link });
+            });
+
+            function updateActiveLink() {
+                const scrollPos = window.scrollY + 100;
+
+                let activeSection = sections[0];
+                for (const section of sections) {
+                    if (section.el.offsetTop <= scrollPos) {
+                        activeSection = section;
+                    }
+                }
+
+                links.forEach(link => link.classList.remove('active'));
+                if (activeSection) {
+                    activeSection.link.classList.add('active');
+                }
+            }
+
+            window.addEventListener('scroll', updateActiveLink, { passive: true });
+            updateActiveLink();
+
+            // Smooth scroll for nav links
+            links.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const id = link.getAttribute('href').slice(1);
+                    const target = document.getElementById(id);
+                    if (target) {
+                        const offset = nav.offsetHeight + 20;
+                        window.scrollTo({
+                            top: target.offsetTop - offset,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+        })();
+    </script>
 </body>
 </html>

@@ -129,13 +129,6 @@ struct PluginReadmeTemplate<'a> {
     year: u16,
 }
 
-#[derive(TemplateSimple)]
-#[template(path = "plugin_build.stpl.rs")]
-struct PluginBuildRsTemplate<'a> {
-    has_scanner: bool,
-    c_symbol: &'a str,
-}
-
 /// Generate crate files for all or a specific grammar.
 ///
 /// This follows the 5-function generation flow from generate.md:
@@ -276,32 +269,7 @@ fn plan_updates_from_generated(
         });
     }
 
-    // Compute npm/grammar/src/ path from def/grammar/src/
-    // Structure: langs/group-*/lang/def/grammar/src/ -> langs/group-*/lang/npm/grammar/src/
-    let npm_src_dir = dest_src_dir
-        .parent() // grammar/
-        .and_then(|p| p.parent()) // def/
-        .and_then(|p| p.parent()) // lang/
-        .map(|lang_dir| lang_dir.join("npm/grammar/src"));
-
-    // Ensure npm/grammar/src/ directory exists
-    if let Some(ref npm_src) = npm_src_dir {
-        let npm_grammar = npm_src.parent().expect("npm/grammar");
-        if !npm_grammar.exists() {
-            plan.add(Operation::CreateDir {
-                path: npm_grammar.to_owned(),
-                description: "Create npm/grammar directory".to_string(),
-            });
-        }
-        if !npm_src.exists() {
-            plan.add(Operation::CreateDir {
-                path: npm_src.to_owned(),
-                description: "Create npm/grammar/src directory".to_string(),
-            });
-        }
-    }
-
-    // Copy all generated files to grammar/src/ and npm/grammar/src/
+    // Copy all generated files to grammar/src/
     // This includes parser.c, scanner.c, grammar.json, node-types.json, and any .h files
     for entry in fs::read_dir(generated_src)? {
         let entry = entry?;
@@ -321,22 +289,10 @@ fn plan_updates_from_generated(
         plan_file_update(
             plan,
             &dest_file,
-            new_content.clone(),
+            new_content,
             &format!("src/{}", file_name),
             mode,
         )?;
-
-        // Also copy to npm/grammar/src/
-        if let Some(ref npm_src) = npm_src_dir {
-            let npm_dest_file = npm_src.join(&file_name);
-            plan_file_update(
-                plan,
-                &npm_dest_file,
-                new_content,
-                &format!("npm/grammar/src/{}", file_name),
-                mode,
-            )?;
-        }
     }
 
     // Copy tree_sitter/ directory
@@ -348,17 +304,6 @@ fn plan_updates_from_generated(
             plan.add(Operation::CreateDir {
                 path: dest_tree_sitter.clone(),
                 description: "Create src/tree_sitter directory".to_string(),
-            });
-        }
-
-        // Ensure npm/grammar/src/tree_sitter/ directory exists
-        let npm_tree_sitter = npm_src_dir.as_ref().map(|p| p.join("tree_sitter"));
-        if let Some(ref npm_ts) = npm_tree_sitter
-            && !npm_ts.exists()
-        {
-            plan.add(Operation::CreateDir {
-                path: npm_ts.to_owned(),
-                description: "Create npm/grammar/src/tree_sitter directory".to_string(),
             });
         }
 
@@ -377,22 +322,10 @@ fn plan_updates_from_generated(
                 plan_file_update(
                     plan,
                     &dest_file,
-                    new_content.clone(),
+                    new_content,
                     &format!("src/tree_sitter/{}", file_name),
                     mode,
                 )?;
-
-                // Also copy to npm/grammar/src/tree_sitter/
-                if let Some(ref npm_ts) = npm_tree_sitter {
-                    let npm_dest_file = npm_ts.join(&file_name);
-                    plan_file_update(
-                        plan,
-                        &npm_dest_file,
-                        new_content,
-                        &format!("npm/grammar/src/tree_sitter/{}", file_name),
-                        mode,
-                    )?;
-                }
             }
         }
     }
@@ -707,29 +640,6 @@ fn generate_plugin_readme(
         .expect("PluginReadmeTemplate render failed")
 }
 
-/// Generate plugin build.rs content.
-fn generate_plugin_build_rs(config: &crate::types::CrateConfig, crate_name: &str) -> String {
-    let grammar = config.grammars.first();
-    let has_scanner = grammar.map(|g| g.has_scanner()).unwrap_or(false);
-
-    let c_symbol: String = grammar
-        .and_then(|g| g.c_symbol.as_ref())
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| {
-            crate_name
-                .strip_prefix("arborium-")
-                .unwrap_or(crate_name)
-                .replace('-', "_")
-        });
-
-    let template = PluginBuildRsTemplate {
-        has_scanner,
-        c_symbol: &c_symbol,
-    };
-    template
-        .render_once()
-        .expect("PluginBuildRsTemplate render failed")
-}
 
 // Data structures for temp directory preparation (shared by validation & generation)
 struct PreparedTemp {
@@ -1395,74 +1305,9 @@ fn plan_plugin_crate_files(
         });
     }
 
-    // Generate npm/build.rs
-    let build_rs_path = npm_path.join("build.rs");
-    let new_build_rs = generate_plugin_build_rs(config, crate_name);
-
-    if build_rs_path.exists() {
-        let old_content = fs::read_to_string(&build_rs_path)?;
-        if old_content != new_build_rs {
-            plan.add(Operation::UpdateFile {
-                path: build_rs_path,
-                old_content: Some(old_content),
-                new_content: new_build_rs,
-                description: "Update plugin build.rs".to_string(),
-            });
-        }
-    } else {
-        plan.add(Operation::CreateFile {
-            path: build_rs_path,
-            content: new_build_rs,
-            description: "Create plugin build.rs".to_string(),
-        });
-    }
-
-    // Grammar source files (parser.c, grammar.json, etc.) are now copied in
-    // plan_updates_from_generated() during the grammar generation phase.
-    // Here we only handle scanner.c which is separate (at def/grammar/scanner.c, not in src/)
-
-    let npm_grammar_dir = npm_path.join("grammar");
-    let npm_grammar_src = npm_grammar_dir.join("src");
-
-    // Copy scanner.c if it exists (it's at def/grammar/scanner.c, not in src/)
-    let def_scanner = crate_state.def_path.join("grammar/scanner.c");
-    let npm_scanner = npm_grammar_src.join("scanner.c");
-
-    if def_scanner.exists() {
-        // Ensure npm/grammar/src/ directory exists for scanner.c
-        if !npm_grammar_dir.exists() {
-            plan.add(Operation::CreateDir {
-                path: npm_grammar_dir.clone(),
-                description: "Create plugin grammar directory".to_string(),
-            });
-        }
-        if !npm_grammar_src.exists() {
-            plan.add(Operation::CreateDir {
-                path: npm_grammar_src.clone(),
-                description: "Create plugin grammar/src directory".to_string(),
-            });
-        }
-
-        let content = fs::read_to_string(&def_scanner)?;
-
-        if npm_scanner.exists() {
-            let old_content = fs::read_to_string(&npm_scanner)?;
-            if old_content != content {
-                plan.add(Operation::UpdateFile {
-                    path: npm_scanner,
-                    old_content: Some(old_content),
-                    new_content: content,
-                    description: "Update grammar/src/scanner.c".to_string(),
-                });
-            }
-        } else {
-            plan.add(Operation::CreateFile {
-                path: npm_scanner,
-                content,
-                description: "Create grammar/src/scanner.c".to_string(),
-            });
-        }
-    }
+    // Note: The plugin crate depends on the grammar crate (e.g., arborium-yaml) which
+    // already compiles parser.c/scanner.c via its own build.rs. We don't need to
+    // duplicate that here - the plugin just links to the grammar crate's static lib.
 
     Ok(plan)
 }

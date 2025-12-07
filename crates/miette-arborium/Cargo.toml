@@ -2,9 +2,14 @@
 name = "miette-arborium"
 version = "0.3.0"
 edition = "2024"
-license = "MIT"
-repository = "https://github.com/bearcove/arborium"
+rust-version = "1.85"
 description = "Arborium-powered syntax highlighter for miette diagnostics"
+authors = ["Amos Wenger <amos@bearcove.eu>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/bearcove/arborium"
+homepage = "https://github.com/bearcove/arborium"
+documentation = "https://docs.rs/miette-arborium"
 keywords = ["syntax-highlighting", "tree-sitter", "miette", "diagnostics", "error-reporting"]
 categories = ["development-tools", "text-processing"]
 

@@ -10,7 +10,7 @@
 //! instantiation.
 
 use std::cell::RefCell;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 wit_bindgen::generate!({
     world: "arborium-host",
@@ -19,7 +19,9 @@ wit_bindgen::generate!({
 
 use crate::arborium::host::plugin_provider::{self, PluginHandle, PluginSession};
 use crate::arborium::host::types::Edit;
-use crate::exports::arborium::host::host::{Document, Guest, HighlightResult, HighlightSpan};
+use crate::exports::arborium::host::host::{Document, Guest, HighlightResult};
+
+mod render;
 
 /// Global state for the host.
 struct HostState {
@@ -166,26 +168,25 @@ impl Guest for HostImpl {
             })
         });
 
-        let Some((plugin, session, language, text)) = doc_info else {
-            return HighlightResult { spans: Vec::new() };
+        let Some((plugin, session, _language, text)) = doc_info else {
+            return HighlightResult { html: String::new() };
         };
 
-        let mut all_spans = Vec::new();
+        let mut all_spans: Vec<render::Span> = Vec::new();
 
         // Parse the main document
         let result = plugin_provider::plugin_parse(plugin, session);
 
         let Ok(parse_result) = result else {
-            return HighlightResult { spans: Vec::new() };
+            return HighlightResult { html: render::spans_to_html(&text, Vec::new()) };
         };
 
         // Add spans from the main language
         for span in parse_result.spans {
-            all_spans.push(HighlightSpan {
+            all_spans.push(render::Span {
                 start: span.start,
                 end: span.end,
                 capture: span.capture,
-                language: language.clone(),
             });
         }
 
@@ -205,10 +206,10 @@ impl Guest for HostImpl {
             }
         }
 
-        // Sort spans by position
-        all_spans.sort_by(|a, b| a.start.cmp(&b.start).then_with(|| b.end.cmp(&a.end)));
+        // Convert spans to HTML (handles deduplication)
+        let html = render::spans_to_html(&text, all_spans);
 
-        HighlightResult { spans: all_spans }
+        HighlightResult { html }
     }
 
     fn cancel(doc: Document) {
@@ -262,7 +263,7 @@ fn process_injection(
     start: u32,
     end: u32,
     remaining_depth: u32,
-) -> Option<Vec<HighlightSpan>> {
+) -> Option<Vec<render::Span>> {
     // Check if we already have a session for this injection language
     let existing_session = STATE.with(|state| {
         let state = state.borrow();
@@ -307,11 +308,10 @@ fn process_injection(
 
     // Add spans with offset adjustment
     for span in result.spans {
-        spans.push(HighlightSpan {
+        spans.push(render::Span {
             start: span.start + start,
             end: span.end + start,
             capture: span.capture,
-            language: language.into(),
         });
     }
 

@@ -2286,3 +2286,113 @@ footer a:hover {
     border-radius: 0;
 }
 
+/* Section navigation */
+.section-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.75rem 1rem;
+    background: color-mix(in srgb, var(--bg) 95%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+    margin: 0 -1rem 1rem -1rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.section-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.nav-link {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.nav-link:hover {
+    color: var(--fg);
+    background: color-mix(in srgb, var(--fg) 8%, transparent);
+}
+
+.nav-link.active {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+/* Integrations section */
+.integrations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.integration-item {
+    background: color-mix(in srgb, var(--surface) 50%, transparent);
+    border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.integration-item h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.integration-item h4 svg {
+    width: 1.2em;
+    height: 1.2em;
+}
+
+.integration-item p {
+    font-size: 0.9rem;
+    margin: 0 0 0.75rem 0;
+    color: var(--fg);
+}
+
+.integration-item .code-block {
+    font-size: 0.8rem;
+}
+
+.integration-links {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 0.75rem !important;
+    margin-bottom: 0 !important;
+}
+
+.integration-links a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.integration-links a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .section-nav {
+        margin: 0 -0.5rem 1rem -0.5rem;
+        padding: 0.5rem;
+    }
+
+    .nav-link {
+        padding: 0.35rem 0.6rem;
+        font-size: 0.8rem;
+    }
+}
+

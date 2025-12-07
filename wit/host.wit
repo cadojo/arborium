@@ -96,17 +96,11 @@ interface host {
     /// A document handle - represents a file being edited.
     type document = u32;
 
-    /// Merged span with source language info.
-    record highlight-span {
-        start: u32,
-        end: u32,
-        capture: string,
-        language: string,
-    }
-
-    /// Result of highlighting a document.
+    /// Result of highlighting a document - rendered HTML using arborium's custom elements.
+    /// Uses short tags like <a-k> for keyword, <a-s> for string, etc.
     record highlight-result {
-        spans: list<highlight-span>,
+        /// The rendered HTML string.
+        html: string,
     }
 
     /// Create a new document with the given primary language.
@@ -123,6 +117,7 @@ interface host {
 
     /// Parse and highlight the document, resolving all injections.
     /// max-depth controls how deep to recurse into injections (0 = no injections).
+    /// Returns rendered HTML using arborium's custom element tags.
     highlight: func(doc: document, max-depth: u32) -> highlight-result;
 
     /// Cancel any in-progress parse on a document.

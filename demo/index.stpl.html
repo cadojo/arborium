@@ -44,7 +44,7 @@
                 </div>
             </aside>
 
-            <div class="editor-container">
+            <div class="editor-container" id="demo">
                 <div class="panel">
                     <div class="editor-toolbar">
                         <div class="toolbar-controls">
@@ -95,8 +95,18 @@
 
         <div id="status" class="status"></div>
 
+        <nav class="section-nav" id="section-nav">
+            <a href="#demo" class="nav-link active">Demo</a>
+            <a href="#about" class="nav-link">About</a>
+            <a href="#get-started" class="nav-link">Get Started</a>
+            <a href="#integrations" class="nav-link">Integrations</a>
+            <a href="#languages" class="nav-link">Languages</a>
+            <a href="#themes" class="nav-link">Themes</a>
+            <a href="#faq" class="nav-link">FAQ</a>
+        </nav>
+
         <div class="cards-container">
-            <div class="about-card solution">
+            <div class="about-card solution" id="about">
                 <h3>arborium</h3>
                 <p>Finding good tree-sitter grammars is hard. In arborium, every grammar:</p>
                 <ul class="check-list">
@@ -158,7 +168,7 @@
                 </div>
             </div>
 
-            <div class="about-card">
+            <div class="about-card" id="get-started">
                 <h3>Get Started</h3>
                 <div class="get-started-options">
                     <div class="get-started-option">
@@ -197,7 +207,38 @@
                 </div>
             </div>
 
-            <div class="about-card">
+            <div class="about-card" id="integrations">
+                <h3>Integrations</h3>
+                <div class="integrations-grid">
+                    <div class="integration-item">
+                        <h4>{{ICON:mdi:alert-circle-outline}} miette-arborium</h4>
+                        <p>Syntax highlighting for <a href="https://crates.io/crates/miette">miette</a> error diagnostics. Beautiful, accurate highlighting in your CLI error messages.</p>
+                        <pre class="code-block"><code><a-k>use</a-k> miette<a-p>::</a-p>GraphicalReportHandler<a-p>;</a-p>
+<a-k>use</a-k> miette_arborium<a-p>::</a-p>ArboriumHighlighter<a-p>;</a-p>
+
+<a-k>let</a-k> handler <a-o>=</a-o> GraphicalReportHandler<a-p>::</a-p>new()
+    <a-p>.</a-p>with_syntax_highlighting(ArboriumHighlighter<a-p>::</a-p>new())<a-p>;</a-p></code></pre>
+                        <p class="integration-links">
+                            <a href="https://crates.io/crates/miette-arborium">crates.io</a> ·
+                            <a href="https://docs.rs/miette-arborium">docs.rs</a>
+                        </p>
+                    </div>
+                    <div class="integration-item">
+                        <h4>{{ICON:mdi:palette-outline}} arborium-theme</h4>
+                        <p>Theme definitions for arborium. Load themes from TOML files or use one of 13+ built-in themes (Catppuccin, Dracula, Tokyo Night, etc.)</p>
+                        <pre class="code-block"><code><a-k>use</a-k> arborium<a-p>::</a-p>theme<a-p>::</a-p>builtin<a-p>;</a-p>
+
+<a-k>let</a-k> theme <a-o>=</a-o> builtin<a-p>::</a-p>dracula()<a-p>;</a-p>
+<a-k>let</a-k> html <a-o>=</a-o> arborium<a-p>::</a-p>highlight(<a-s>"rust"</a-s>, code, theme)<a-p>;</a-p></code></pre>
+                        <p class="integration-links">
+                            <a href="https://crates.io/crates/arborium-theme">crates.io</a> ·
+                            <a href="https://docs.rs/arborium-theme">docs.rs</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="about-card" id="languages">
                 <h3>Languages</h3>
                 <p>
                     <strong id="lang-count">90+</strong> languages included, each behind a feature flag.
@@ -212,7 +253,7 @@
                 </p>
             </div>
 
-            <div class="about-card">
+            <div class="about-card" id="themes">
                 <h3>Theme support</h3>
                 <p>
                     The highlighter supports themes for both <strong>HTML</strong> and <strong>ANSI</strong> output.
@@ -227,7 +268,7 @@
                 </p>
             </div>
 
-            <div class="about-card faq">
+            <div class="about-card faq" id="faq">
                 <h3>FAQ</h3>
                 <div class="faq-item">
                     <h4><span class="faq-icon">{{ICON:mdi:regex}}</span>Why not highlight.js or Shiki?</h4>
@@ -294,5 +335,54 @@
     </div>
 
     <script type="module" src="pkg/app.generated.js"></script>
+    <script>
+        // Section navigation - highlight active section on scroll
+        (function() {
+            const nav = document.getElementById('section-nav');
+            const links = nav.querySelectorAll('.nav-link');
+            const sections = [];
+
+            links.forEach(link => {
+                const id = link.getAttribute('href').slice(1);
+                const section = document.getElementById(id);
+                if (section) sections.push({ id, el: section, link });
+            });
+
+            function updateActiveLink() {
+                const scrollPos = window.scrollY + 100;
+
+                let activeSection = sections[0];
+                for (const section of sections) {
+                    if (section.el.offsetTop <= scrollPos) {
+                        activeSection = section;
+                    }
+                }
+
+                links.forEach(link => link.classList.remove('active'));
+                if (activeSection) {
+                    activeSection.link.classList.add('active');
+                }
+            }
+
+            window.addEventListener('scroll', updateActiveLink, { passive: true });
+            updateActiveLink();
+
+            // Smooth scroll for nav links
+            links.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const id = link.getAttribute('href').slice(1);
+                    const target = document.getElementById(id);
+                    if (target) {
+                        const offset = nav.offsetHeight + 20;
+                        window.scrollTo({
+                            top: target.offsetTop - offset,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+        })();
+    </script>
 </body>
 </html>
