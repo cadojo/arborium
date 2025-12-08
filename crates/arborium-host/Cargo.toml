@@ -12,6 +12,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 wit-bindgen = "0.36"
+arborium-highlight = { path = "../arborium-highlight" }
 
 [package.metadata.component]
 package = "arborium:host"

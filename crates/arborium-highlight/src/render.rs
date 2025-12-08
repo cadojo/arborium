@@ -1,0 +1,325 @@
+//! HTML rendering from highlight spans.
+//!
+//! This module converts raw spans from grammar parsers into HTML with proper
+//! handling of overlapping spans (deduplication) and span coalescing.
+//!
+//! # Span Coalescing
+//!
+//! Adjacent spans that map to the same theme slot are merged into a single HTML element.
+//! For example, if we have:
+//! - `keyword.function` at bytes 0-4
+//! - `keyword` at bytes 5-8
+//!
+//! Both map to the "keyword" slot (`k` tag), so they become a single `<a-k>` element.
+
+use crate::Span;
+use arborium_theme::tag_for_capture;
+use std::collections::HashMap;
+use std::io::{self, Write};
+
+/// A normalized span with theme slot tag.
+#[derive(Debug, Clone)]
+struct NormalizedSpan {
+    start: u32,
+    end: u32,
+    tag: &'static str,
+}
+
+/// Normalize spans: map captures to theme slots and merge adjacent spans with same tag.
+fn normalize_and_coalesce(spans: Vec<Span>) -> Vec<NormalizedSpan> {
+    if spans.is_empty() {
+        return vec![];
+    }
+
+    // First, normalize all spans to their theme slot tags
+    let mut normalized: Vec<NormalizedSpan> = spans
+        .into_iter()
+        .filter_map(|span| {
+            tag_for_capture(&span.capture).map(|tag| NormalizedSpan {
+                start: span.start,
+                end: span.end,
+                tag,
+            })
+        })
+        .collect();
+
+    if normalized.is_empty() {
+        return vec![];
+    }
+
+    // Sort by start position
+    normalized.sort_by_key(|s| (s.start, s.end));
+
+    // Coalesce adjacent spans with the same tag
+    let mut coalesced: Vec<NormalizedSpan> = Vec::with_capacity(normalized.len());
+
+    for span in normalized {
+        if let Some(last) = coalesced.last_mut() {
+            // If this span is adjacent (or overlapping) and has the same tag, merge
+            if span.tag == last.tag && span.start <= last.end {
+                // Extend the last span to cover this one
+                last.end = last.end.max(span.end);
+                continue;
+            }
+        }
+        coalesced.push(span);
+    }
+
+    coalesced
+}
+
+/// Deduplicate spans and convert to HTML.
+///
+/// This handles:
+/// 1. Mapping captures to theme slots (many -> few)
+/// 2. Coalescing adjacent spans with the same tag
+/// 3. Handling overlapping spans
+pub fn spans_to_html(source: &str, spans: Vec<Span>) -> String {
+    if spans.is_empty() {
+        return html_escape(source);
+    }
+
+    // Sort spans by (start, -end) so longer spans come first at same start
+    let mut spans = spans;
+    spans.sort_by(|a, b| a.start.cmp(&b.start).then_with(|| b.end.cmp(&a.end)));
+
+    // Deduplicate: for spans with the exact same (start, end), keep the last one
+    // (later patterns in tree-sitter queries are more specific)
+    let mut deduped: HashMap<(u32, u32), Span> = HashMap::new();
+    for span in spans {
+        let key = (span.start, span.end);
+        // Always overwrite - later spans take precedence
+        deduped.insert(key, span);
+    }
+
+    // Convert back to vec
+    let spans: Vec<Span> = deduped.into_values().collect();
+
+    // Normalize to theme slots and coalesce adjacent same-tag spans
+    let spans = normalize_and_coalesce(spans);
+
+    if spans.is_empty() {
+        return html_escape(source);
+    }
+
+    // Re-sort after coalescing
+    let mut spans = spans;
+    spans.sort_by(|a, b| a.start.cmp(&b.start).then_with(|| b.end.cmp(&a.end)));
+
+    // Build events from spans
+    let mut events: Vec<(u32, bool, usize)> = Vec::new(); // (pos, is_start, span_index)
+    for (i, span) in spans.iter().enumerate() {
+        events.push((span.start, true, i));
+        events.push((span.end, false, i));
+    }
+
+    // Sort events: by position, then ends before starts at same position
+    events.sort_by(|a, b| {
+        a.0.cmp(&b.0)
+            .then_with(|| a.1.cmp(&b.1)) // false (end) < true (start)
+    });
+
+    // Process events with a stack
+    let mut html = String::with_capacity(source.len() * 2);
+    let mut last_pos: usize = 0;
+    let mut stack: Vec<usize> = Vec::new(); // indices into spans
+
+    for (pos, is_start, span_idx) in events {
+        let pos = pos as usize;
+
+        // Emit any source text before this position
+        if pos > last_pos && pos <= source.len() {
+            let text = &source[last_pos..pos];
+            if let Some(&top_idx) = stack.last() {
+                let tag = spans[top_idx].tag;
+                html.push_str("<a-");
+                html.push_str(tag);
+                html.push('>');
+                html.push_str(&html_escape(text));
+                html.push_str("</a-");
+                html.push_str(tag);
+                html.push('>');
+            } else {
+                html.push_str(&html_escape(text));
+            }
+            last_pos = pos;
+        }
+
+        // Update the stack
+        if is_start {
+            stack.push(span_idx);
+        } else {
+            // Remove this span from stack
+            if let Some(idx) = stack.iter().rposition(|&x| x == span_idx) {
+                stack.remove(idx);
+            }
+        }
+    }
+
+    // Emit remaining text
+    if last_pos < source.len() {
+        let text = &source[last_pos..];
+        if let Some(&top_idx) = stack.last() {
+            let tag = spans[top_idx].tag;
+            html.push_str("<a-");
+            html.push_str(tag);
+            html.push('>');
+            html.push_str(&html_escape(text));
+            html.push_str("</a-");
+            html.push_str(tag);
+            html.push('>');
+        } else {
+            html.push_str(&html_escape(text));
+        }
+    }
+
+    html
+}
+
+/// Write spans as HTML to a writer.
+///
+/// This is more efficient than `spans_to_html` for streaming output.
+pub fn write_spans_as_html<W: Write>(w: &mut W, source: &str, spans: Vec<Span>) -> io::Result<()> {
+    let html = spans_to_html(source, spans);
+    w.write_all(html.as_bytes())
+}
+
+/// Escape HTML special characters.
+pub fn html_escape(text: &str) -> String {
+    let mut result = String::with_capacity(text.len());
+    for c in text.chars() {
+        match c {
+            '<' => result.push_str("&lt;"),
+            '>' => result.push_str("&gt;"),
+            '&' => result.push_str("&amp;"),
+            '"' => result.push_str("&quot;"),
+            '\'' => result.push_str("&#39;"),
+            _ => result.push(c),
+        }
+    }
+    result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_simple_highlight() {
+        let source = "fn main";
+        let spans = vec![
+            Span {
+                start: 0,
+                end: 2,
+                capture: "keyword".into(),
+            },
+            Span {
+                start: 3,
+                end: 7,
+                capture: "function".into(),
+            },
+        ];
+        let html = spans_to_html(source, spans);
+        assert_eq!(html, "<a-k>fn</a-k> <a-f>main</a-f>");
+    }
+
+    #[test]
+    fn test_keyword_variants_coalesce() {
+        // Different keyword captures should all map to "k" and coalesce
+        let source = "with use import";
+        let spans = vec![
+            Span {
+                start: 0,
+                end: 4,
+                capture: "include".into(), // nvim-treesitter name
+            },
+            Span {
+                start: 5,
+                end: 8,
+                capture: "keyword".into(),
+            },
+            Span {
+                start: 9,
+                end: 15,
+                capture: "keyword.import".into(),
+            },
+        ];
+        let html = spans_to_html(source, spans);
+        // All should use "k" tag - but they're not adjacent so still separate
+        assert!(html.contains("<a-k>with</a-k>"));
+        assert!(html.contains("<a-k>use</a-k>"));
+        assert!(html.contains("<a-k>import</a-k>"));
+    }
+
+    #[test]
+    fn test_adjacent_same_tag_coalesce() {
+        // Adjacent spans with same tag should merge
+        let source = "keyword";
+        let spans = vec![
+            Span {
+                start: 0,
+                end: 3,
+                capture: "keyword".into(),
+            },
+            Span {
+                start: 3,
+                end: 7,
+                capture: "keyword.function".into(), // Maps to same slot
+            },
+        ];
+        let html = spans_to_html(source, spans);
+        // Should be one tag, not two
+        assert_eq!(html, "<a-k>keyword</a-k>");
+    }
+
+    #[test]
+    fn test_overlapping_spans_dedupe() {
+        let source = "apiVersion";
+        // Two spans for the same range - should keep only one
+        let spans = vec![
+            Span {
+                start: 0,
+                end: 10,
+                capture: "property".into(),
+            },
+            Span {
+                start: 0,
+                end: 10,
+                capture: "variable".into(),
+            },
+        ];
+        let html = spans_to_html(source, spans);
+        // Should only have one tag, not two
+        assert!(!html.contains("apiVersionapiVersion"));
+        assert!(html.contains("apiVersion"));
+    }
+
+    #[test]
+    fn test_html_escape() {
+        let source = "<script>";
+        let spans = vec![];
+        let html = spans_to_html(source, spans);
+        assert_eq!(html, "&lt;script&gt;");
+    }
+
+    #[test]
+    fn test_nospell_filtered() {
+        // Captures like "spell" and "nospell" should produce no output
+        let source = "hello world";
+        let spans = vec![
+            Span {
+                start: 0,
+                end: 5,
+                capture: "spell".into(),
+            },
+            Span {
+                start: 6,
+                end: 11,
+                capture: "nospell".into(),
+            },
+        ];
+        let html = spans_to_html(source, spans);
+        // No tags should be emitted
+        assert_eq!(html, "hello world");
+    }
+}

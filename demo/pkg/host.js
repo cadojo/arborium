@@ -966,53 +966,7 @@ let gen = (function* _initGenerator () {
   let realloc0;
   let realloc1;
   
-  function trampoline11(arg0, arg1, arg2, arg3) {
-    var ptr0 = arg2;
-    var len0 = arg3;
-    var result0 = utf8Decoder.decode(new Uint8Array(memory0.buffer, ptr0, len0));
-    _debugLog('[iface="arborium:host/plugin-provider@0.1.0", function="plugin-set-text"] [Instruction::CallInterface] (async? sync, @ enter)');
-    const _interface_call_currentTaskID = startCurrentTask(0, false, 'plugin-set-text');
-    pluginSetText(arg0 >>> 0, arg1 >>> 0, result0);
-    _debugLog('[iface="arborium:host/plugin-provider@0.1.0", function="plugin-set-text"] [Instruction::CallInterface] (sync, @ post-call)');
-    endCurrentTask(0);
-    _debugLog('[iface="arborium:host/plugin-provider@0.1.0", function="plugin-set-text"][Instruction::Return]', {
-      funcName: 'plugin-set-text',
-      paramCount: 0,
-      async: false,
-      postReturn: false
-    });
-  }
-  
-  
-  function trampoline12(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12) {
-    var ptr0 = arg2;
-    var len0 = arg3;
-    var result0 = utf8Decoder.decode(new Uint8Array(memory0.buffer, ptr0, len0));
-    _debugLog('[iface="arborium:host/plugin-provider@0.1.0", function="plugin-apply-edit"] [Instruction::CallInterface] (async? sync, @ enter)');
-    const _interface_call_currentTaskID = startCurrentTask(0, false, 'plugin-apply-edit');
-    pluginApplyEdit(arg0 >>> 0, arg1 >>> 0, result0, {
-      startByte: arg4 >>> 0,
-      oldEndByte: arg5 >>> 0,
-      newEndByte: arg6 >>> 0,
-      startRow: arg7 >>> 0,
-      startCol: arg8 >>> 0,
-      oldEndRow: arg9 >>> 0,
-      oldEndCol: arg10 >>> 0,
-      newEndRow: arg11 >>> 0,
-      newEndCol: arg12 >>> 0,
-    });
-    _debugLog('[iface="arborium:host/plugin-provider@0.1.0", function="plugin-apply-edit"] [Instruction::CallInterface] (sync, @ post-call)');
-    endCurrentTask(0);
-    _debugLog('[iface="arborium:host/plugin-provider@0.1.0", function="plugin-apply-edit"][Instruction::Return]', {
-      funcName: 'plugin-apply-edit',
-      paramCount: 0,
-      async: false,
-      postReturn: false
-    });
-  }
-  
-  
-  function trampoline13(arg0, arg1, arg2) {
+  function trampoline11(arg0, arg1, arg2) {
     var ptr0 = arg0;
     var len0 = arg1;
     var result0 = utf8Decoder.decode(new Uint8Array(memory0.buffer, ptr0, len0));
@@ -1038,7 +992,7 @@ let gen = (function* _initGenerator () {
   }
   
   
-  function trampoline14(arg0, arg1, arg2) {
+  function trampoline12(arg0, arg1, arg2) {
     _debugLog('[iface="arborium:host/plugin-provider@0.1.0", function="plugin-parse"] [Instruction::CallInterface] (async? sync, @ enter)');
     const _interface_call_currentTaskID = startCurrentTask(0, false, 'plugin-parse');
     let ret;
@@ -1104,6 +1058,52 @@ let gen = (function* _initGenerator () {
     }
     _debugLog('[iface="arborium:host/plugin-provider@0.1.0", function="plugin-parse"][Instruction::Return]', {
       funcName: 'plugin-parse',
+      paramCount: 0,
+      async: false,
+      postReturn: false
+    });
+  }
+  
+  
+  function trampoline13(arg0, arg1, arg2, arg3) {
+    var ptr0 = arg2;
+    var len0 = arg3;
+    var result0 = utf8Decoder.decode(new Uint8Array(memory0.buffer, ptr0, len0));
+    _debugLog('[iface="arborium:host/plugin-provider@0.1.0", function="plugin-set-text"] [Instruction::CallInterface] (async? sync, @ enter)');
+    const _interface_call_currentTaskID = startCurrentTask(0, false, 'plugin-set-text');
+    pluginSetText(arg0 >>> 0, arg1 >>> 0, result0);
+    _debugLog('[iface="arborium:host/plugin-provider@0.1.0", function="plugin-set-text"] [Instruction::CallInterface] (sync, @ post-call)');
+    endCurrentTask(0);
+    _debugLog('[iface="arborium:host/plugin-provider@0.1.0", function="plugin-set-text"][Instruction::Return]', {
+      funcName: 'plugin-set-text',
+      paramCount: 0,
+      async: false,
+      postReturn: false
+    });
+  }
+  
+  
+  function trampoline14(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12) {
+    var ptr0 = arg2;
+    var len0 = arg3;
+    var result0 = utf8Decoder.decode(new Uint8Array(memory0.buffer, ptr0, len0));
+    _debugLog('[iface="arborium:host/plugin-provider@0.1.0", function="plugin-apply-edit"] [Instruction::CallInterface] (async? sync, @ enter)');
+    const _interface_call_currentTaskID = startCurrentTask(0, false, 'plugin-apply-edit');
+    pluginApplyEdit(arg0 >>> 0, arg1 >>> 0, result0, {
+      startByte: arg4 >>> 0,
+      oldEndByte: arg5 >>> 0,
+      newEndByte: arg6 >>> 0,
+      startRow: arg7 >>> 0,
+      startCol: arg8 >>> 0,
+      oldEndRow: arg9 >>> 0,
+      oldEndCol: arg10 >>> 0,
+      newEndRow: arg11 >>> 0,
+      newEndCol: arg12 >>> 0,
+    });
+    _debugLog('[iface="arborium:host/plugin-provider@0.1.0", function="plugin-apply-edit"] [Instruction::CallInterface] (sync, @ post-call)');
+    endCurrentTask(0);
+    _debugLog('[iface="arborium:host/plugin-provider@0.1.0", function="plugin-apply-edit"][Instruction::Return]', {
+      funcName: 'plugin-apply-edit',
       paramCount: 0,
       async: false,
       postReturn: false
@@ -2774,11 +2774,11 @@ let gen = (function* _initGenerator () {
       'create-plugin-session': trampoline2,
       'free-plugin-session': trampoline1,
       'get-injection-languages': exports0['4'],
-      'load-plugin': exports0['2'],
-      'plugin-apply-edit': exports0['1'],
+      'load-plugin': exports0['0'],
+      'plugin-apply-edit': exports0['3'],
       'plugin-cancel': trampoline0,
-      'plugin-parse': exports0['3'],
-      'plugin-set-text': exports0['0'],
+      'plugin-parse': exports0['1'],
+      'plugin-set-text': exports0['2'],
     },
     wasi_snapshot_preview1: {
       environ_get: exports0['7'],

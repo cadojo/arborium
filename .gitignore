@@ -29,6 +29,8 @@ crates/*/src/lib.rs
 !crates/arborium-host/src/lib.rs
 !crates/arborium-wire/Cargo.toml
 !crates/arborium-wire/src/lib.rs
+!crates/arborium-highlight/Cargo.toml
+!crates/arborium-highlight/src/lib.rs
 
 # New structure (langs/) - Generated files
 # Generated tree-sitter files in def/grammar/src/ (parser.c, grammar.json, etc.)

@@ -33,6 +33,9 @@ use std::path::Path;
 use tree_sitter::Language;
 use tree_sitter_highlight::{HighlightConfiguration, HighlightEvent, Highlighter};
 
+// Re-export CAPTURE_NAMES from arborium-theme as HIGHLIGHT_NAMES for convenience
+pub use arborium_theme::CAPTURE_NAMES as HIGHLIGHT_NAMES_FULL;
+
 /// Tests a grammar by validating its queries and highlighting all samples.
 ///
 /// This function:
@@ -77,7 +80,7 @@ pub fn test_grammar(
         );
     });
 
-    config.configure(HIGHLIGHT_NAMES);
+    config.configure(arborium_theme::CAPTURE_NAMES);
 
     // Find samples from arborium.kdl
     let crate_path = Path::new(crate_dir);
@@ -199,57 +202,9 @@ fn parse_samples_from_kdl(path: &Path) -> Vec<String> {
 }
 
 /// Standard highlight names used by arborium.
-pub const HIGHLIGHT_NAMES: &[&str] = &[
-    "attribute",
-    "boolean",
-    "carriage-return",
-    "comment",
-    "comment.documentation",
-    "constant",
-    "constant.builtin",
-    "constructor",
-    "constructor.builtin",
-    "embedded",
-    "error",
-    "escape",
-    "function",
-    "function.builtin",
-    "keyword",
-    "markup",
-    "markup.bold",
-    "markup.heading",
-    "markup.italic",
-    "markup.link",
-    "markup.link.url",
-    "markup.list",
-    "markup.list.checked",
-    "markup.list.numbered",
-    "markup.list.unchecked",
-    "markup.list.unnumbered",
-    "markup.quote",
-    "markup.raw",
-    "markup.raw.block",
-    "markup.raw.inline",
-    "markup.strikethrough",
-    "module",
-    "number",
-    "operator",
-    "property",
-    "property.builtin",
-    "punctuation",
-    "punctuation.bracket",
-    "punctuation.delimiter",
-    "punctuation.special",
-    "string",
-    "string.escape",
-    "string.regexp",
-    "string.special",
-    "string.special.symbol",
-    "tag",
-    "type",
-    "type.builtin",
-    "variable",
-    "variable.builtin",
-    "variable.member",
-    "variable.parameter",
-];
+///
+/// **Deprecated**: Use [`arborium_theme::CAPTURE_NAMES`] instead, which is the
+/// canonical source of truth for all capture names.
+///
+/// This constant is kept for backwards compatibility.
+pub const HIGHLIGHT_NAMES: &[&str] = arborium_theme::CAPTURE_NAMES;

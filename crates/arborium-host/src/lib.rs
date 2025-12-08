@@ -10,18 +10,17 @@
 //! instantiation.
 
 use std::cell::RefCell;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
 wit_bindgen::generate!({
     world: "arborium-host",
     path: "../../wit/host.wit",
 });
 
+use arborium_highlight::{spans_to_html, Span};
 use crate::arborium::host::plugin_provider::{self, PluginHandle, PluginSession};
 use crate::arborium::host::types::Edit;
 use crate::exports::arborium::host::host::{Document, Guest, HighlightResult};
-
-mod render;
 
 /// Global state for the host.
 struct HostState {
@@ -172,18 +171,18 @@ impl Guest for HostImpl {
             return HighlightResult { html: String::new() };
         };
 
-        let mut all_spans: Vec<render::Span> = Vec::new();
+        let mut all_spans: Vec<Span> = Vec::new();
 
         // Parse the main document
         let result = plugin_provider::plugin_parse(plugin, session);
 
         let Ok(parse_result) = result else {
-            return HighlightResult { html: render::spans_to_html(&text, Vec::new()) };
+            return HighlightResult { html: spans_to_html(&text, Vec::new()) };
         };
 
         // Add spans from the main language
         for span in parse_result.spans {
-            all_spans.push(render::Span {
+            all_spans.push(Span {
                 start: span.start,
                 end: span.end,
                 capture: span.capture,
@@ -207,7 +206,7 @@ impl Guest for HostImpl {
         }
 
         // Convert spans to HTML (handles deduplication)
-        let html = render::spans_to_html(&text, all_spans);
+        let html = spans_to_html(&text, all_spans);
 
         HighlightResult { html }
     }
@@ -263,7 +262,7 @@ fn process_injection(
     start: u32,
     end: u32,
     remaining_depth: u32,
-) -> Option<Vec<render::Span>> {
+) -> Option<Vec<Span>> {
     // Check if we already have a session for this injection language
     let existing_session = STATE.with(|state| {
         let state = state.borrow();
@@ -308,7 +307,7 @@ fn process_injection(
 
     // Add spans with offset adjustment
     for span in result.spans {
-        spans.push(render::Span {
+        spans.push(Span {
             start: span.start + start,
             end: span.end + start,
             capture: span.capture,
