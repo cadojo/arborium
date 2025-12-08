@@ -9,11 +9,20 @@
 //! - `pre`: Shared crates that grammars depend on (tree-sitter, sysroot, test-harness)
 //! - Language groups (cedar, fern, birch, etc.): Grammar crates in `langs/group-*/`
 //! - `post`: Umbrella crates that depend on grammars (arborium)
+//!
+//! ## Dependency Ordering
+//!
+//! Within all grammar crates, dependencies are resolved via topological sort.
+//! Crates are published leaves-first (crates with no dependencies on other
+//! grammar crates are published first).
 
 use camino::{Utf8Path, Utf8PathBuf};
 use miette::{Context, IntoDiagnostic, Result};
 use owo_colors::OwoColorize;
+use std::collections::HashMap;
 use std::process::{Command, Stdio};
+
+use crate::types::CrateRegistry;
 
 /// Crates in the "pre" group - must be published before grammar crates.
 /// These are shared dependencies that grammar crates rely on.
@@ -79,7 +88,7 @@ pub fn publish_crates(repo_root: &Utf8Path, group: Option<&str>, dry_run: bool) 
         }
         None => {
             // Publish everything in order
-            println!("  Publishing all groups in order: pre → groups → post");
+            println!("  Publishing: pre → grammars (topologically sorted) → post");
             println!();
 
             // 1. Pre crates
@@ -89,14 +98,16 @@ pub fn publish_crates(repo_root: &Utf8Path, group: Option<&str>, dry_run: bool) 
             publish_crate_paths(&pre_paths, dry_run)?;
             println!();
 
-            // 2. All language groups
-            let groups = find_all_groups(&langs_dir)?;
-            for group_name in &groups {
-                println!("  {} Publishing {} group...", "●".cyan(), group_name.bold());
-                let crates = find_group_crates(&langs_dir, group_name)?;
-                publish_crate_paths(&crates, dry_run)?;
-                println!();
-            }
+            // 2. All grammar crates in dependency order (leaves first)
+            println!(
+                "  {} Publishing {} (topologically sorted)...",
+                "●".cyan(),
+                "grammar crates".bold()
+            );
+            let sorted_crates = topological_sort_grammar_crates(repo_root, &langs_dir)?;
+            println!("    {} crates to publish in dependency order", sorted_crates.len());
+            publish_crate_paths(&sorted_crates, dry_run)?;
+            println!();
 
             // 3. Post crates
             println!("  {} Publishing {} group...", "●".cyan(), "post".bold());
@@ -525,6 +536,129 @@ fn find_group_crates(langs_dir: &Utf8Path, group_name: &str) -> Result<Vec<Utf8P
 
     crates.sort();
     Ok(crates)
+}
+
+/// Collect ALL grammar crates and sort them topologically by dependencies.
+///
+/// This ensures crates are published leaves-first: if crate A depends on crate B,
+/// then B will appear before A in the returned list.
+fn topological_sort_grammar_crates(
+    repo_root: &Utf8Path,
+    langs_dir: &Utf8Path,
+) -> Result<Vec<Utf8PathBuf>> {
+    let crates_dir = repo_root.join("crates");
+
+    // Load the registry to get dependency information
+    let registry = CrateRegistry::load(&crates_dir)
+        .map_err(|e| miette::miette!("failed to load crate registry: {}", e))?;
+
+    // Build a map from crate name -> crate path
+    // and a map from crate name -> dependencies (other arborium crate names)
+    let mut crate_paths: HashMap<String, Utf8PathBuf> = HashMap::new();
+    let mut dependencies: HashMap<String, Vec<String>> = HashMap::new();
+
+    // Collect all grammar crates from all groups
+    let groups = find_all_groups(langs_dir)?;
+    for group_name in &groups {
+        let group_crates = find_group_crates(langs_dir, group_name)?;
+        for crate_path in group_crates {
+            // Extract crate name from Cargo.toml
+            if let Ok((name, _)) = read_crate_info(&crate_path) {
+                crate_paths.insert(name.clone(), crate_path);
+                dependencies.insert(name, Vec::new());
+            }
+        }
+    }
+
+    // Now fill in dependencies from the registry
+    for (_, _state, config) in registry.configured_crates() {
+        for grammar in &config.grammars {
+            let crate_name = format!("arborium-{}", grammar.id());
+
+            // Only process if this crate is in our map
+            if !crate_paths.contains_key(&crate_name) {
+                continue;
+            }
+
+            // Add dependencies from grammar config
+            for dep in &grammar.dependencies {
+                // dep.krate is like "arborium-c"
+                if crate_paths.contains_key(&dep.krate) {
+                    dependencies
+                        .get_mut(&crate_name)
+                        .unwrap()
+                        .push(dep.krate.clone());
+                }
+            }
+        }
+    }
+
+    // Topological sort using Kahn's algorithm
+    // in_degree[X] = number of crates X depends on
+    let mut in_degree: HashMap<String, usize> = HashMap::new();
+    for (name, deps) in &dependencies {
+        in_degree.insert(name.clone(), deps.len());
+    }
+
+    // Build reverse dependency map: dependents[X] = crates that depend on X
+    let mut dependents: HashMap<String, Vec<String>> = HashMap::new();
+    for name in crate_paths.keys() {
+        dependents.insert(name.clone(), Vec::new());
+    }
+    for (name, deps) in &dependencies {
+        for dep in deps {
+            if let Some(list) = dependents.get_mut(dep) {
+                list.push(name.clone());
+            }
+        }
+    }
+
+    // Start with crates that have no dependencies (in_degree == 0)
+    let mut queue: Vec<String> = in_degree
+        .iter()
+        .filter(|(_, deg)| **deg == 0)
+        .map(|(name, _)| name.clone())
+        .collect();
+    queue.sort(); // Deterministic order for crates at same level
+
+    let mut sorted: Vec<String> = Vec::new();
+
+    while let Some(name) = queue.pop() {
+        sorted.push(name.clone());
+
+        // For each crate that depends on this one, decrement its in-degree
+        if let Some(deps_on_me) = dependents.get(&name) {
+            for dependent in deps_on_me {
+                if let Some(deg) = in_degree.get_mut(dependent) {
+                    *deg -= 1;
+                    if *deg == 0 {
+                        queue.push(dependent.clone());
+                        queue.sort(); // Keep deterministic
+                    }
+                }
+            }
+        }
+    }
+
+    // Check for cycles
+    if sorted.len() != crate_paths.len() {
+        let remaining: Vec<_> = crate_paths
+            .keys()
+            .filter(|k| !sorted.contains(k))
+            .collect();
+        return Err(miette::miette!(
+            "Dependency cycle detected involving: {:?}",
+            remaining
+        ));
+    }
+
+    // Convert names back to paths
+    let result: Vec<Utf8PathBuf> = sorted
+        .into_iter()
+        .filter_map(|name| crate_paths.remove(&name))
+        .collect();
+
+    Ok(result)
 }
 
 // =============================================================================

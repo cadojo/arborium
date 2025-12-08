@@ -397,26 +397,29 @@ fn main() {
             let registry = crate::types::CrateRegistry::load(&crates_dir)
                 .expect("failed to load crate registry");
 
-            // Determine which grammars to process
+            // Determine which grammars to process (only actual grammars with generate-component)
             let grammar_ids: Vec<String> = if let Some(ref pkg) = package {
-                // Single package specified
-                if !registry.crates.contains_key(&format!("arborium-{}", pkg)) {
-                    eprintln!("Unknown package: {}", pkg);
-                    eprintln!("Available packages:");
-                    for name in registry.crates.keys() {
-                        if let Some(id) = name.strip_prefix("arborium-") {
-                            eprintln!("  {}", id);
+                // Single package specified - validate it exists and is a grammar
+                let found = registry
+                    .all_grammars()
+                    .any(|(_, _, g)| g.id() == pkg && g.generate_component());
+                if !found {
+                    eprintln!("Unknown grammar: {}", pkg);
+                    eprintln!("Available grammars:");
+                    for (_, _, g) in registry.all_grammars() {
+                        if g.generate_component() {
+                            eprintln!("  {}", g.id());
                         }
                     }
                     std::process::exit(1);
                 }
                 vec![pkg.clone()]
             } else {
-                // All packages
+                // All grammars with generate-component enabled
                 registry
-                    .crates
-                    .keys()
-                    .filter_map(|name| name.strip_prefix("arborium-").map(|s| s.to_string()))
+                    .all_grammars()
+                    .filter(|(_, _, g)| g.generate_component())
+                    .map(|(_, _, g)| g.id().to_string())
                     .collect()
             };
 
@@ -500,16 +503,18 @@ fn main() {
                 let crate_dir = &crate_state.crate_path;
 
                 // Run cargo publish --dry-run
-                let status = std::process::Command::new("cargo")
+                let output = std::process::Command::new("cargo")
                     .args(["publish", "--dry-run", "--allow-dirty"])
                     .current_dir(crate_dir.as_std_path())
-                    .stdout(std::process::Stdio::null())
-                    .stderr(std::process::Stdio::piped())
-                    .status()
+                    .output()
                     .expect("failed to run cargo publish --dry-run");
 
-                if !status.success() {
-                    eprintln!("  {} cargo publish --dry-run failed", "✗".red());
+                if !output.status.success() {
+                    eprintln!("  {} cargo publish --dry-run failed:", "✗".red());
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    for line in stderr.lines() {
+                        eprintln!("    {}", line);
+                    }
                     failures.push(format!("{}: cargo publish failed", grammar_id));
                     continue;
                 }
@@ -526,16 +531,18 @@ fn main() {
                     continue;
                 }
 
-                let status = std::process::Command::new("npm")
+                let output = std::process::Command::new("npm")
                     .args(["publish", "--dry-run"])
                     .current_dir(plugin_dir.as_std_path())
-                    .stdout(std::process::Stdio::null())
-                    .stderr(std::process::Stdio::piped())
-                    .status()
+                    .output()
                     .expect("failed to run npm publish --dry-run");
 
-                if !status.success() {
-                    eprintln!("  {} npm publish --dry-run failed", "✗".red());
+                if !output.status.success() {
+                    eprintln!("  {} npm publish --dry-run failed:", "✗".red());
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    for line in stderr.lines() {
+                        eprintln!("    {}", line);
+                    }
                     failures.push(format!("{}: npm publish failed", grammar_id));
                     continue;
                 }
