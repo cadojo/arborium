@@ -1339,24 +1339,45 @@ fn plan_crate_files_only(
     let def_grammar_dir = def_path.join("grammar");
     let crate_grammar_dir = crate_path.join("grammar");
 
-    // Copy scanner.c if present in def/grammar/ into crate/grammar/
-    let def_scanner = def_grammar_dir.join("scanner.c");
-    if def_scanner.exists() {
-        let scanner_content = fs::read_to_string(&def_scanner)?;
-        if !crate_grammar_dir.exists() {
-            plan.add(Operation::CreateDir {
-                path: crate_grammar_dir.clone(),
-                description: "Create crate grammar directory".to_string(),
-            });
+    // Copy all hand-written files from def/grammar/ into crate/grammar/.
+    // This includes scanner.c, header files like tag.h, etc.
+    // We skip the src/ subdirectory since that contains generated files
+    // (copied during grammar generation step).
+    if def_grammar_dir.exists() {
+        let mut created_grammar_dir = false;
+
+        for entry in fs::read_dir(&def_grammar_dir)? {
+            let entry = entry?;
+            let src_path = Utf8PathBuf::from_path_buf(entry.path())
+                .map_err(|_| std::io::Error::other("Non-UTF8 path"))?;
+            let file_name = entry.file_name().to_string_lossy().to_string();
+
+            // Skip directories (src/ is handled by grammar generation, common/ handled below)
+            if src_path.is_dir() {
+                continue;
+            }
+
+            // Skip non-source files
+            if !file_name.ends_with(".c") && !file_name.ends_with(".h") && !file_name.ends_with(".cc") {
+                continue;
+            }
+
+            if !created_grammar_dir {
+                if !crate_grammar_dir.exists() {
+                    plan.add(Operation::CreateDir {
+                        path: crate_grammar_dir.clone(),
+                        description: "Create crate grammar directory".to_string(),
+                    });
+                }
+                created_grammar_dir = true;
+            }
+
+            let new_content = fs::read_to_string(&src_path)?;
+            let dest_path = crate_grammar_dir.join(&file_name);
+            let desc = format!("crate grammar/{}", file_name);
+
+            plan_file_update(&mut plan, &dest_path, new_content, &desc, mode)?;
         }
-        let crate_scanner = crate_grammar_dir.join("scanner.c");
-        plan_file_update(
-            &mut plan,
-            &crate_scanner,
-            scanner_content,
-            "crate grammar/scanner.c",
-            mode,
-        )?;
     }
 
     // Copy any common/ headers used by scanner.c into crate/grammar/common/.
