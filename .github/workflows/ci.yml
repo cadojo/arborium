@@ -611,6 +611,16 @@ jobs:
         name: Checkout
         uses: actions/checkout@v4
       - 
+        name: Download grammar sources
+        uses: actions/download-artifact@v4
+        with: 
+          name: grammar-sources
+          path: .
+
+      - 
+        name: Extract grammar sources
+        run: tar -xvf grammar-sources.tar
+      - 
         name: Setup Node.js
         uses: actions/setup-node@v4
         with: 

@@ -620,7 +620,12 @@ echo "No env imports found - WASM modules are browser-compatible""#,
         let mut npm_needs = vec!["generate".to_string()];
         npm_needs.extend(plugin_job_ids.iter().cloned());
 
-        let mut npm_steps = vec![checkout(), setup_node()];
+        let mut npm_steps = vec![
+            checkout(),
+            download_grammar_sources(),
+            extract_grammar_sources(),
+            setup_node(),
+        ];
 
         // Download all plugin artifacts
         for group_name in &plugin_group_names {

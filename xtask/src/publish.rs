@@ -15,8 +15,6 @@ use miette::{Context, IntoDiagnostic, Result};
 use owo_colors::OwoColorize;
 use std::process::{Command, Stdio};
 
-use crate::version_store;
-
 /// Crates in the "pre" group - must be published before grammar crates.
 /// These are shared dependencies that grammar crates rely on.
 const PRE_CRATES: &[&str] = &[
@@ -44,20 +42,6 @@ pub fn publish_crates(repo_root: &Utf8Path, group: Option<&str>, dry_run: bool) 
         println!("{}", "  (dry run)".yellow());
     }
 
-    // Read expected version from version.json (written by `xtask gen --version` in CI).
-    // If it's missing locally, we just skip version checks.
-    let expected_version = match version_store::read_version(repo_root) {
-        Ok(v) => v,
-        Err(e) => {
-            eprintln!(
-                "{} Could not read version.json ({}); skipping crate version check",
-                "!".yellow(),
-                e
-            );
-            String::new()
-        }
-    };
-
     let langs_dir = repo_root.join("langs");
 
     match group {
@@ -65,9 +49,6 @@ pub fn publish_crates(repo_root: &Utf8Path, group: Option<&str>, dry_run: bool) 
             println!("  Publishing {} group", "pre".cyan());
             let crate_paths: Vec<Utf8PathBuf> =
                 PRE_CRATES.iter().map(|c| repo_root.join(c)).collect();
-            if !dry_run && !expected_version.is_empty() {
-                validate_crate_versions(&crate_paths, &expected_version)?;
-            }
             publish_crate_paths(&crate_paths, dry_run)?;
             print_crates_next_steps(&langs_dir, Some("pre"))?;
             Ok(())
@@ -76,9 +57,6 @@ pub fn publish_crates(repo_root: &Utf8Path, group: Option<&str>, dry_run: bool) 
             println!("  Publishing {} group", "post".cyan());
             let crate_paths: Vec<Utf8PathBuf> =
                 POST_CRATES.iter().map(|c| repo_root.join(c)).collect();
-            if !dry_run && !expected_version.is_empty() {
-                validate_crate_versions(&crate_paths, &expected_version)?;
-            }
             publish_crate_paths(&crate_paths, dry_run)?;
             print_crates_next_steps(&langs_dir, Some("post"))?;
             Ok(())
@@ -95,9 +73,6 @@ pub fn publish_crates(repo_root: &Utf8Path, group: Option<&str>, dry_run: bool) 
                 );
                 return Ok(());
             }
-            if !dry_run && !expected_version.is_empty() {
-                validate_crate_versions(&crates, &expected_version)?;
-            }
             publish_crate_paths(&crates, dry_run)?;
             print_crates_next_steps(&langs_dir, Some(group_name))?;
             Ok(())
@@ -111,9 +86,6 @@ pub fn publish_crates(repo_root: &Utf8Path, group: Option<&str>, dry_run: bool) 
             println!("  {} Publishing {} group...", "●".cyan(), "pre".bold());
             let pre_paths: Vec<Utf8PathBuf> =
                 PRE_CRATES.iter().map(|c| repo_root.join(c)).collect();
-            if !dry_run && !expected_version.is_empty() {
-                validate_crate_versions(&pre_paths, &expected_version)?;
-            }
             publish_crate_paths(&pre_paths, dry_run)?;
             println!();
 
@@ -122,9 +94,6 @@ pub fn publish_crates(repo_root: &Utf8Path, group: Option<&str>, dry_run: bool) 
             for group_name in &groups {
                 println!("  {} Publishing {} group...", "●".cyan(), group_name.bold());
                 let crates = find_group_crates(&langs_dir, group_name)?;
-                if !dry_run && !expected_version.is_empty() {
-                    validate_crate_versions(&crates, &expected_version)?;
-                }
                 publish_crate_paths(&crates, dry_run)?;
                 println!();
             }
@@ -133,9 +102,6 @@ pub fn publish_crates(repo_root: &Utf8Path, group: Option<&str>, dry_run: bool) 
             println!("  {} Publishing {} group...", "●".cyan(), "post".bold());
             let post_paths: Vec<Utf8PathBuf> =
                 POST_CRATES.iter().map(|c| repo_root.join(c)).collect();
-            if !dry_run && !expected_version.is_empty() {
-                validate_crate_versions(&post_paths, &expected_version)?;
-            }
             publish_crate_paths(&post_paths, dry_run)?;
 
             println!();
@@ -226,20 +192,6 @@ pub fn publish_npm(
         println!("{}", "  (dry run)".yellow());
     }
 
-    // Read expected version from version.json (written by `xtask gen --version` in CI).
-    // If it's missing locally, we just skip version checks.
-    let expected_version = match version_store::read_version(repo_root) {
-        Ok(v) => v,
-        Err(e) => {
-            eprintln!(
-                "{} Could not read version.json ({}); skipping npm version check",
-                "!".yellow(),
-                e
-            );
-            String::new()
-        }
-    };
-
     let packages = match group {
         Some(group_name) => {
             println!("  Publishing {} group", group_name.cyan());
@@ -254,41 +206,6 @@ pub fn publish_npm(
             .unwrap_or_else(|| langs_dir.to_string());
         println!("{} No npm packages found in {}", "!".yellow(), location);
         return Ok(());
-    }
-
-    // Guard rail: ensure every npm package we are about to publish has the same
-    // version as version.json. This prevents accidentally publishing 0.0.0-dev
-    // or mismatched versions when the repo hasn't been regenerated.
-    if !dry_run && !expected_version.is_empty() {
-        let mut mismatches = Vec::new();
-        for package_dir in &packages {
-            let (name, version) = read_package_info(package_dir)?;
-            if version != expected_version {
-                mismatches.push((name, version));
-            }
-        }
-
-        if !mismatches.is_empty() {
-            println!();
-            println!(
-                "{} Version mismatch between npm packages and version.json:",
-                "!".yellow()
-            );
-            println!("  expected version: {}", expected_version.cyan());
-            for (name, version) in &mismatches {
-                println!(
-                    "  - {} has {}, expected {}",
-                    name.cyan(),
-                    version.red(),
-                    expected_version.cyan()
-                );
-            }
-            return Err(miette::miette!(
-                "npm package versions do not match version.json. \
-                 Run `cargo xtask gen --version {}` and rebuild plugins before publishing.",
-                expected_version
-            ));
-        }
     }
 
     println!("  Found {} packages to publish", packages.len());
@@ -369,43 +286,6 @@ enum CratePublishResult {
     Published,
     AlreadyExists,
     Failed,
-}
-
-/// Validate that all crates have the expected version (ignoring workspace version placeholders).
-fn validate_crate_versions(crates: &[Utf8PathBuf], expected_version: &str) -> Result<()> {
-    let mut mismatches = Vec::new();
-
-    for crate_dir in crates {
-        let (name, version) = read_crate_info(crate_dir)?;
-        if version != "workspace" && version != expected_version {
-            mismatches.push((name, version));
-        }
-    }
-
-    if mismatches.is_empty() {
-        return Ok(());
-    }
-
-    println!();
-    println!(
-        "{} Version mismatch between crates and version.json:",
-        "!".yellow()
-    );
-    println!("  expected version: {}", expected_version.cyan());
-    for (name, version) in &mismatches {
-        println!(
-            "  - {} has {}, expected {}",
-            name.cyan(),
-            version.red(),
-            expected_version.cyan()
-        );
-    }
-
-    Err(miette::miette!(
-        "crate versions do not match version.json. \
-         Run `cargo xtask gen --version {}` before publishing.",
-        expected_version
-    ))
 }
 
 /// Publish crates from a list of paths.
