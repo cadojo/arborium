@@ -114,6 +114,19 @@ enum Command {
         dev: bool,
     },
 
+    /// End-to-end sanity check for generation & publishing
+    ///
+    /// This:
+    /// - generates a single grammar with the given version,
+    /// - builds its WASM plugin,
+    /// - runs a dry-run cargo publish for its crate,
+    /// - and runs a dry-run npm publish for its plugin.
+    E2e {
+        /// Version to use for this e2e run (default: "0.0.0-test")
+        #[facet(args::named, default)]
+        version: Option<String>,
+    },
+
     /// Clean plugin build artifacts (standard layout)
     Clean,
 
@@ -366,6 +379,132 @@ fn main() {
                 eprintln!("{:?}", e);
                 std::process::exit(1);
             }
+        }
+        Command::E2e { version } => {
+            let version = version.unwrap_or_else(|| "0.0.0-test".to_string());
+
+            // Hard-coded sample grammar used for e2e checks.
+            // This should be a "boring" grammar that exercises the normal path.
+            let grammar_id = "json";
+
+            let repo_root = util::find_repo_root().expect("Could not find repo root");
+            let repo_root = camino::Utf8PathBuf::from_path_buf(repo_root).expect("non-UTF8 path");
+            let crates_dir = repo_root.join("crates");
+
+            println!(
+                "{} Running e2e check for grammar '{}' with version {}",
+                "●".cyan(),
+                grammar_id,
+                version.cyan()
+            );
+
+            // 1. Generate only this grammar with the provided version.
+            if !tool::check_tools_or_report(tool::GEN_TOOLS) {
+                std::process::exit(1);
+            }
+
+            let gen_options = generate::GenerateOptions {
+                name: Some(grammar_id),
+                mode: plan::PlanMode::Execute,
+                version: &version,
+                no_fail_fast: true,
+                jobs: 4,
+            };
+
+            let plans = match generate::plan_generate(&crates_dir, gen_options) {
+                Ok(plans) => plans,
+                Err(e) => {
+                    eprintln!("Generation failed: {}", e);
+                    std::process::exit(1);
+                }
+            };
+
+            if let Err(e) = plans.run(false) {
+                eprintln!("Error while applying generation plan: {}", e);
+                std::process::exit(1);
+            }
+
+            // 2. Build the WASM plugin for this grammar.
+            if !tool::check_tools_or_report(tool::PLUGIN_TOOLS) {
+                std::process::exit(1);
+            }
+
+            let build_opts = build::BuildOptions {
+                grammars: vec![grammar_id.to_string()],
+                group: None,
+                output_dir: Some(camino::Utf8PathBuf::from("dist/plugins-e2e")),
+                transpile: true,
+                jobs: 2,
+            };
+
+            if let Err(e) = build::build_plugins(&repo_root, &build_opts) {
+                eprintln!("Plugin build failed: {:?}", e);
+                std::process::exit(1);
+            }
+
+            // We need the crate path for this grammar to run cargo publish --dry-run.
+            let registry = crate::types::CrateRegistry::load(&crates_dir)
+                .expect("failed to load crate registry");
+            let (crate_state, _) = crate::build::locate_grammar(&registry, grammar_id)
+                .expect("grammar not found in registry after generation");
+
+            let crate_dir = &crate_state.crate_path;
+
+            // 3. Run cargo publish --dry-run for the crate.
+            println!(
+                "{} Dry-running cargo publish for crate at {}",
+                "●".cyan(),
+                crate_dir
+            );
+
+            let status = std::process::Command::new("cargo")
+                .args(["publish", "--dry-run", "--allow-dirty"])
+                .current_dir(crate_dir.as_std_path())
+                .status()
+                .expect("failed to run cargo publish --dry-run");
+
+            if !status.success() {
+                eprintln!("cargo publish --dry-run failed");
+                std::process::exit(1);
+            }
+
+            // 4. Run npm publish --dry-run for the plugin package.
+            let plugin_dir = crate_dir
+                .parent()
+                .expect("crate_path should have parent")
+                .join("npm");
+
+            println!(
+                "{} Dry-running npm publish for plugin at {}",
+                "●".cyan(),
+                plugin_dir
+            );
+
+            if !plugin_dir.join("package.json").exists() {
+                eprintln!(
+                    "npm package.json not found at {} - did generation succeed?",
+                    plugin_dir
+                );
+                std::process::exit(1);
+            }
+
+            let status = std::process::Command::new("npm")
+                .args(["publish", "--dry-run"])
+                .current_dir(plugin_dir.as_std_path())
+                .status()
+                .expect("failed to run npm publish --dry-run");
+
+            if !status.success() {
+                eprintln!("npm publish --dry-run failed");
+                std::process::exit(1);
+            }
+
+            println!(
+                "{} e2e check completed successfully for grammar '{}' at version {}",
+                "✓".green(),
+                grammar_id,
+                version.cyan()
+            );
         }
         Command::Clean => {
             let repo_root = util::find_repo_root().expect("Could not find repo root");

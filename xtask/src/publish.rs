@@ -371,12 +371,6 @@ enum CratePublishResult {
     Failed,
 }
 
-/// Publish a list of crates by their relative paths from repo root.
-fn publish_crate_list(repo_root: &Utf8Path, crates: &[&str], dry_run: bool) -> Result<()> {
-    let paths: Vec<Utf8PathBuf> = crates.iter().map(|c| repo_root.join(c)).collect();
-    publish_crate_paths(&paths, dry_run)
-}
-
 /// Validate that all crates have the expected version (ignoring workspace version placeholders).
 fn validate_crate_versions(crates: &[Utf8PathBuf], expected_version: &str) -> Result<()> {
     let mut mismatches = Vec::new();

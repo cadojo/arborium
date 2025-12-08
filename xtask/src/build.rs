@@ -594,7 +594,7 @@ fn build_single_plugin(
     Ok(())
 }
 
-fn locate_grammar<'a>(
+pub fn locate_grammar<'a>(
     registry: &'a CrateRegistry,
     grammar: &str,
 ) -> Option<(

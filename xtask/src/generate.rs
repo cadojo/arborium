@@ -1437,6 +1437,37 @@ fn plan_crate_files_only(
         }
     }
 
+    // Copy query files (highlights.scm, injections.scm, locals.scm) into crate/queries/
+    // so that include_str! paths work in the published package.
+    let def_queries_dir = def_path.join("queries");
+    let crate_queries_dir = crate_path.join("queries");
+
+    if def_queries_dir.exists() {
+        let mut queries_found = false;
+
+        for query_name in &["highlights.scm", "injections.scm", "locals.scm"] {
+            let src_query = def_queries_dir.join(query_name);
+            if src_query.exists() {
+                if !queries_found {
+                    // Create queries/ directory on first query found
+                    if !crate_queries_dir.exists() {
+                        plan.add(Operation::CreateDir {
+                            path: crate_queries_dir.clone(),
+                            description: "Create crate queries directory".to_string(),
+                        });
+                    }
+                    queries_found = true;
+                }
+
+                let query_content = fs::read_to_string(&src_query)?;
+                let dest_query = crate_queries_dir.join(query_name);
+                let desc = format!("crate queries/{}", query_name);
+
+                plan_file_update(&mut plan, &dest_query, query_content, &desc, mode)?;
+            }
+        }
+    }
+
     Ok(plan)
 }
 
