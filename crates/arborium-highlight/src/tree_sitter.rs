@@ -25,15 +25,15 @@ use streaming_iterator::StreamingIterator;
 use tree_sitter_patched_arborium::{Language, Parser, Query, QueryCursor, Tree};
 
 /// Configuration for creating a TreeSitterGrammar.
-pub struct TreeSitterGrammarConfig {
+pub struct TreeSitterGrammarConfig<'a> {
     /// The tree-sitter Language
     pub language: Language,
     /// The highlights query (required for syntax highlighting)
-    pub highlights_query: &'static str,
+    pub highlights_query: &'a str,
     /// The injections query (for embedded languages)
-    pub injections_query: &'static str,
+    pub injections_query: &'a str,
     /// The locals query (for local variable tracking)
-    pub locals_query: &'static str,
+    pub locals_query: &'a str,
 }
 
 /// Error when creating a TreeSitterGrammar
@@ -71,7 +71,7 @@ pub struct TreeSitterGrammar {
 
 impl TreeSitterGrammar {
     /// Create a new TreeSitterGrammar from configuration.
-    pub fn new(config: TreeSitterGrammarConfig) -> Result<Self, TreeSitterGrammarError> {
+    pub fn new(config: TreeSitterGrammarConfig<'_>) -> Result<Self, TreeSitterGrammarError> {
         let mut parser = Parser::new();
         parser
             .set_language(&config.language)

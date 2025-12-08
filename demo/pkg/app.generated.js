@@ -1,8 +1,7 @@
-// Arborium Demo - Component-based highlighting via arborium-host
-// The host component orchestrates grammar plugins and returns rendered HTML
+// Arborium Demo - Syntax highlighting via arborium-host (wasm-bindgen)
+// The Rust host handles highlighting with async grammar loading via window.arboriumHost
 
-// Build WASI stubs for browser environment
-// Each instantiation needs fresh instances where stream objects are instanceof the classes passed in
+// Build WASI stubs for browser environment (used by grammar plugins)
 function createWasiStubs() {
     class WasiInputStream {
         read(len) { return new Uint8Array(0); }
@@ -17,44 +16,21 @@ function createWasiStubs() {
 
     class WasiError {}
 
-    // Stream instances must be created from the same class references passed in imports
     const stdinStream = new WasiInputStream();
     const stdoutStream = new WasiOutputStream();
     const stderrStream = new WasiOutputStream();
 
     return {
-        'wasi:cli/environment': {
-            getEnvironment: () => [],
-        },
-        'wasi:cli/exit': {
-            exit: (code) => { throw new Error(`WASI exit called with code ${code}`); },
-        },
-        'wasi:cli/stderr': {
-            getStderr: () => stderrStream,
-        },
-        'wasi:cli/stdin': {
-            getStdin: () => stdinStream,
-        },
-        'wasi:cli/stdout': {
-            getStdout: () => stdoutStream,
-        },
-        'wasi:filesystem/preopens': {
-            getDirectories: () => [],
-        },
-        'wasi:filesystem/types': {
-            Descriptor: class {},
-            filesystemErrorCode: () => null,
-        },
-        'wasi:io/error': {
-            Error: WasiError,
-        },
-        'wasi:io/streams': {
-            InputStream: WasiInputStream,
-            OutputStream: WasiOutputStream,
-        },
-        'wasi:random/random': {
-            getRandomBytes: (len) => new Uint8Array(Number(len)),
-        },
+        'wasi:cli/environment': { getEnvironment: () => [] },
+        'wasi:cli/exit': { exit: (code) => { throw new Error(`WASI exit: ${code}`); } },
+        'wasi:cli/stderr': { getStderr: () => stderrStream },
+        'wasi:cli/stdin': { getStdin: () => stdinStream },
+        'wasi:cli/stdout': { getStdout: () => stdoutStream },
+        'wasi:filesystem/preopens': { getDirectories: () => [] },
+        'wasi:filesystem/types': { Descriptor: class {}, filesystemErrorCode: () => null },
+        'wasi:io/error': { Error: WasiError },
+        'wasi:io/streams': { InputStream: WasiInputStream, OutputStream: WasiOutputStream },
+        'wasi:random/random': { getRandomBytes: (len) => new Uint8Array(Number(len)) },
     };
 }
 
@@ -1393,22 +1369,18 @@ const icons = {
     "simple-icons:zig": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"m23.53 1.02l-7.686 3.45h-7.06l-2.98 3.452h7.173L.47 22.98l7.681-3.607h7.065v-.002l2.978-3.45l-7.148-.001l12.482-14.9zM0 4.47v14.901h1.883l2.98-3.45H3.451v-8h.942l2.824-3.45zm22.117 0l-2.98 3.608h1.412v7.844h-.942l-2.98 3.45H24V4.47z\"/></svg>"
 };
 
-// Registry loaded from registry.json
+// Registry loaded from plugins.json
 let registry = null;
 
-// The host component instance
-let host = null;
+// The wasm-bindgen host module (arborium_host.js)
+let hostModule = null;
 
-// Cache for loaded grammar plugins (used by plugin-provider)
+// Cache for loaded grammar plugins
 const grammarCache = {};
 
-// Map from plugin handle (u32) to plugin instance
-const pluginHandles = new Map();
-let nextPluginHandle = 1;
-
-// Map from session handle (u32) to {plugin, session}
-const sessionHandles = new Map();
-let nextSessionHandle = 1;
+// Map from grammar handle to plugin instance (for window.arboriumHost.parse)
+const handleToPlugin = new Map();
+let nextHandle = 1;
 
 // Cache for fetched sample content
 const examplesCache = {};
@@ -1494,177 +1466,86 @@ async function loadGrammarPlugin(langId) {
     }
 }
 
-// Plugin provider implementation - called by the host component
-// These are synchronous because the host calls them synchronously,
-// but we need to have pre-loaded the plugins before calling host.highlight()
-function createPluginProvider() {
-    return {
-        'arborium:host/plugin-provider': {
-            // Load a plugin for the given language (must be pre-loaded)
-            // Note: jco wraps option returns - return value directly for Some, undefined for None
-            loadPlugin(language) {
-                const plugin = grammarCache[language];
-                if (!plugin) {
-                    return undefined;  // jco wraps as { tag: 'none' }
-                }
-                const handle = nextPluginHandle++;
-                pluginHandles.set(handle, { plugin, language });
-                return handle;  // jco wraps as { tag: 'some', val: handle }
-            },
+// Setup window.arboriumHost interface for the Rust host to call into
+function setupArboriumHost() {
+    // Expose loadGrammar for testing/debugging
+    window.loadGrammar = loadGrammarPlugin;
 
-            // Get injection languages for a plugin
-            getInjectionLanguages(pluginHandle) {
-                const entry = pluginHandles.get(pluginHandle);
-                if (!entry) return [];
-                try {
-                    return entry.plugin.injectionLanguages();
-                } catch (e) {
-                    return [];
-                }
-            },
+    window.arboriumHost = {
+        // Check if a language is available (sync check)
+        isLanguageAvailable(language) {
+            const entry = registry?.entries?.find(e => e.language === language);
+            return !!entry || !!grammarCache[language];
+        },
 
-            // Create a session on a plugin
-            createPluginSession(pluginHandle) {
-                const entry = pluginHandles.get(pluginHandle);
-                if (!entry) return 0;
-                const session = entry.plugin.createSession();
-                const sessionHandle = nextSessionHandle++;
-                sessionHandles.set(sessionHandle, { plugin: entry.plugin, session });
-                return sessionHandle;
-            },
+        // Load a grammar and return a handle (async)
+        async loadGrammar(language) {
+            const plugin = await loadGrammarPlugin(language);
+            if (!plugin) return 0; // 0 = not found
 
-            // Free a plugin session
-            freePluginSession(pluginHandle, sessionHandle) {
-                const entry = sessionHandles.get(sessionHandle);
-                if (entry) {
-                    entry.plugin.freeSession(entry.session);
-                    sessionHandles.delete(sessionHandle);
-                }
-            },
+            // Check if already have a handle
+            for (const [handle, p] of handleToPlugin) {
+                if (p.language === language) return handle;
+            }
 
-            // Set text on a plugin session
-            pluginSetText(pluginHandle, sessionHandle, text) {
-                const entry = sessionHandles.get(sessionHandle);
-                if (entry) {
-                    entry.plugin.setText(entry.session, text);
-                }
-            },
+            // Create new handle
+            const handle = nextHandle++;
+            handleToPlugin.set(handle, { plugin, language });
+            return handle;
+        },
 
-            // Apply edit on a plugin session
-            pluginApplyEdit(pluginHandle, sessionHandle, text, edit) {
-                const entry = sessionHandles.get(sessionHandle);
-                if (entry) {
-                    entry.plugin.applyEdit(entry.session, text, edit);
-                }
-            },
+        // Parse text using a grammar handle (sync)
+        parse(handle, text) {
+            const entry = handleToPlugin.get(handle);
+            if (!entry) return { spans: [], injections: [] };
 
-            // Parse on a plugin session
-            // Note: jco wraps our return in { tag: 'ok', val: ... } automatically,
-            // and converts thrown errors to { tag: 'err', val: ... }
-            pluginParse(pluginHandle, sessionHandle) {
-                const entry = sessionHandles.get(sessionHandle);
-                if (!entry) {
-                    throw new Error('Invalid session');
-                }
+            const { plugin } = entry;
+            const session = plugin.createSession();
+            try {
+                plugin.setText(session, text);
+                const result = plugin.parse(session);
 
-                const result = entry.plugin.parse(entry.session);
-
-                // The plugin returns result<parse-result, parse-error>
-                // We need to unwrap it and return parse-result directly
+                // Unwrap WIT Result type
                 if (result.tag === 'err') {
-                    throw new Error(result.val.message || 'Parse failed');
+                    console.error(`Parse error: ${result.val?.message}`);
+                    return { spans: [], injections: [] };
                 }
-
-                // Handle both { tag: 'ok', val: {...} } and direct {...} formats
                 const val = result.tag === 'ok' ? result.val : result;
-                return {
-                    spans: val.spans || [],
-                    injections: val.injections || [],
-                };
-            },
-
-            // Cancel a plugin session's parse
-            pluginCancel(pluginHandle, sessionHandle) {
-                const entry = sessionHandles.get(sessionHandle);
-                if (entry && entry.plugin.cancel) {
-                    entry.plugin.cancel(entry.session);
-                }
-            },
+                return { spans: val.spans || [], injections: val.injections || [] };
+            } finally {
+                plugin.freeSession(session);
+            }
         },
     };
 }
 
-// Load the host component
+// Load the wasm-bindgen host module
 async function loadHost() {
-    if (host) return host;
+    if (hostModule) return hostModule;
+
+    // Setup the interface the host imports
+    setupArboriumHost();
 
     try {
-        // Import the host.js module (generated by jco)
-        const module = await import('/pkg/host.js');
+        // Import and initialize the wasm-bindgen host
+        const module = await import('/pkg/arborium_host.js');
+        await module.default('/pkg/arborium_host_bg.wasm');
 
-        // Compute base URL for WASM files
-        const baseUrl = new URL('/pkg/host.js', window.location.href).href;
-
-        // Instantiate with WASM fetch function, WASI stubs, and plugin provider
-        const instance = await module.instantiate(
-            async (name) => {
-                const wasmUrl = new URL(name, baseUrl).href;
-                const response = await fetch(wasmUrl);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch WASM ${name}: ${response.status}`);
-                }
-                return WebAssembly.compile(await response.arrayBuffer());
-            },
-            {
-                ...createWasiStubs(),
-                ...createPluginProvider(),
-            }
-        );
-
-        // Get the host interface
-        host = instance.host || instance['arborium:host/host@0.1.0'];
-        if (!host) {
-            throw new Error('Host component missing host interface');
-        }
-
-        return host;
+        hostModule = {
+            highlight: module.highlight,
+            isLanguageAvailable: module.isLanguageAvailable,
+        };
+        return hostModule;
     } catch (e) {
-        console.error('Failed to load host component:', e);
+        console.error('Failed to load arborium host:', e);
         throw e;
     }
 }
 
-// Map from language to document handle (for reuse)
-const documentCache = new Map();
-
-// Highlight code using the host component
+// Highlight code using the Rust host (handles injections automatically)
 async function highlightCode(langId, source) {
-    // Ensure the grammar plugin is pre-loaded (host calls are synchronous)
-    const plugin = await loadGrammarPlugin(langId);
-    if (!plugin) {
-        throw new Error(`Grammar '${langId}' not available`);
-    }
-
-    // Ensure host is loaded
-    const h = await loadHost();
-
-    // Get or create a document for this language
-    let doc = documentCache.get(langId);
-    if (doc === undefined) {
-        const result = h.createDocument(langId);
-        if (result.tag === 'none' || result === undefined) {
-            throw new Error(`Failed to create document for '${langId}'`);
-        }
-        doc = result.tag === 'some' ? result.val : result;
-        documentCache.set(langId, doc);
-    }
-
-    // Set the text
-    h.setText(doc, source);
-
-    // Highlight and get HTML directly
-    const result = h.highlight(doc, 3); // max_depth = 3 for injections
-    return result.html;
+    const host = await loadHost();
+    return host.highlight(langId, source);
 }
 
 // Escape HTML special characters (used for non-highlighted display)

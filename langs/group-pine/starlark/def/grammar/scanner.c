@@ -98,6 +98,17 @@ bool tree_sitter_starlark_external_scanner_scan(void *payload, TSLexer *lexer, c
     bool error_recovery_mode = valid_symbols[STRING_CONTENT] && valid_symbols[INDENT];
     bool within_brackets = valid_symbols[CLOSE_BRACE] || valid_symbols[CLOSE_PAREN] || valid_symbols[CLOSE_BRACKET];
 
+    // Handle comments - emit them as tokens when valid
+    if (valid_symbols[COMMENT] && !error_recovery_mode && lexer->lookahead == '#') {
+        advance(lexer);
+        while (lexer->lookahead && lexer->lookahead != '\n') {
+            advance(lexer);
+        }
+        lexer->mark_end(lexer);
+        lexer->result_symbol = COMMENT;
+        return true;
+    }
+
     bool advanced_once = false;
     if (valid_symbols[ESCAPE_INTERPOLATION] && scanner->delimiters.size > 0 &&
         (lexer->lookahead == '{' || lexer->lookahead == '}') && !error_recovery_mode) {
@@ -236,6 +247,18 @@ bool tree_sitter_starlark_external_scanner_scan(void *payload, TSLexer *lexer, c
             // token.
             if (!found_end_of_line) {
                 return false;
+            }
+            // If COMMENT is valid, emit a COMMENT token for this comment
+            // instead of just skipping it. This ensures comments at the start
+            // of lines get proper highlighting.
+            if (valid_symbols[COMMENT]) {
+                advance(lexer);
+                while (lexer->lookahead && lexer->lookahead != '\n') {
+                    advance(lexer);
+                }
+                lexer->mark_end(lexer);
+                lexer->result_symbol = COMMENT;
+                return true;
             }
             if (first_comment_indent_length == -1) {
                 first_comment_indent_length = (int32_t)indent_length;

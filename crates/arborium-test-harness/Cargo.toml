@@ -14,6 +14,6 @@ keywords = ["syntax-highlighting", "tree-sitter", "testing"]
 categories = ["development-tools::testing"]
 
 [dependencies]
-tree-sitter-patched-arborium = { version = "0.25.10", path = "../../tree-sitter" }
-tree-sitter-highlight-patched-arborium = { version = "0.25.10", path = "../../tree-sitter-highlight" }
+arborium-highlight = { path = "../arborium-highlight", features = ["tree-sitter"] }
 arborium-theme = { path = "../arborium-theme" }
+tree-sitter-patched-arborium = { path = "../../tree-sitter" }

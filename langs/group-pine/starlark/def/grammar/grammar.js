@@ -32,6 +32,7 @@ module.exports = grammar({
   extras: $ => [
     /\s/,
     $.line_continuation,
+    $.comment,
   ],
 
   externals: $ => [

@@ -25,13 +25,14 @@
 //! }
 //! ```
 
-pub use tree_sitter_highlight_patched_arborium as tree_sitter_highlight;
+pub use arborium_highlight;
 pub use tree_sitter_patched_arborium as tree_sitter;
 
 use std::fs;
 use std::path::Path;
-use tree_sitter::Language;
-use tree_sitter_highlight::{HighlightConfiguration, HighlightEvent, Highlighter};
+
+use arborium_highlight::{Grammar, TreeSitterGrammar, TreeSitterGrammarConfig};
+use tree_sitter_patched_arborium::Language;
 
 // Re-export CAPTURE_NAMES from arborium-theme as HIGHLIGHT_NAMES for convenience
 pub use arborium_theme::CAPTURE_NAMES as HIGHLIGHT_NAMES_FULL;
@@ -49,7 +50,7 @@ pub use arborium_theme::CAPTURE_NAMES as HIGHLIGHT_NAMES_FULL;
 /// * `name` - The grammar name (e.g., "rust")
 /// * `highlights_query` - The highlights.scm content
 /// * `injections_query` - The injections.scm content
-/// * `locals_query` - The locals.scm content
+/// * `locals_query` - The locals.scm content (currently unused by arborium-highlight)
 /// * `crate_dir` - Path to the crate directory (use `env!("CARGO_MANIFEST_DIR")`)
 ///
 /// # Panics
@@ -60,18 +61,19 @@ pub fn test_grammar(
     name: &str,
     highlights_query: &str,
     injections_query: &str,
-    locals_query: &str,
+    _locals_query: &str,
     crate_dir: &str,
 ) {
-    // Validate queries compile
-    let mut config = HighlightConfiguration::new(
+    // Create TreeSitterGrammar config
+    let config = TreeSitterGrammarConfig {
         language,
-        name,
         highlights_query,
         injections_query,
-        locals_query,
-    )
-    .unwrap_or_else(|e| {
+        locals_query: "", // Not used by arborium-highlight yet
+    };
+
+    // Validate queries compile by creating the grammar
+    let mut grammar = TreeSitterGrammar::new(config).unwrap_or_else(|e| {
         panic!(
             "Query validation failed for {}: {:?}\n\
              This usually means highlights.scm references a node type that doesn't exist in the grammar.\n\
@@ -79,8 +81,6 @@ pub fn test_grammar(
             name, e
         );
     });
-
-    config.configure(arborium_theme::CAPTURE_NAMES);
 
     // Find samples from arborium.kdl
     let crate_path = Path::new(crate_dir);
@@ -100,7 +100,6 @@ pub fn test_grammar(
     }
 
     // Test each sample - must produce at least one highlight
-    let mut highlighter = Highlighter::new();
     for sample_path in &samples {
         let sample_code = fs::read_to_string(sample_path).unwrap_or_else(|e| {
             panic!(
@@ -111,32 +110,11 @@ pub fn test_grammar(
             );
         });
 
-        let highlights = highlighter
-            .highlight(&config, sample_code.as_bytes(), None, |_| None)
-            .unwrap_or_else(|e| {
-                panic!(
-                    "Failed to start highlighting {} for {}: {:?}",
-                    sample_path.display(),
-                    name,
-                    e
-                );
-            });
+        // Parse with the grammar
+        let result = grammar.parse(&sample_code);
 
-        // Count highlight events
-        let mut highlight_count = 0;
-        for event in highlights {
-            let event = event.unwrap_or_else(|e| {
-                panic!(
-                    "Highlighting error in {} for {}: {:?}",
-                    sample_path.display(),
-                    name,
-                    e
-                );
-            });
-            if matches!(event, HighlightEvent::HighlightStart(_)) {
-                highlight_count += 1;
-            }
-        }
+        // Count highlight spans
+        let highlight_count = result.spans.len();
 
         // Verify we got highlights
         if highlight_count == 0 {

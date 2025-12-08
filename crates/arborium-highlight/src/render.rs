@@ -83,13 +83,23 @@ pub fn spans_to_html(source: &str, spans: Vec<Span>) -> String {
     let mut spans = spans;
     spans.sort_by(|a, b| a.start.cmp(&b.start).then_with(|| b.end.cmp(&a.end)));
 
-    // Deduplicate: for spans with the exact same (start, end), keep the last one
-    // (later patterns in tree-sitter queries are more specific)
+    // Deduplicate: for spans with the exact same (start, end), prefer spans with styling.
+    // This handles the case where @comment @spell produces two spans - we want @comment,
+    // not @spell (which maps to ThemeSlot::None and produces no HTML).
     let mut deduped: HashMap<(u32, u32), Span> = HashMap::new();
     for span in spans {
         let key = (span.start, span.end);
-        // Always overwrite - later spans take precedence
-        deduped.insert(key, span);
+        let new_has_styling = tag_for_capture(&span.capture).is_some();
+
+        if let Some(existing) = deduped.get(&key) {
+            let existing_has_styling = tag_for_capture(&existing.capture).is_some();
+            // Only overwrite if the new span has styling, or if neither has styling
+            if new_has_styling || !existing_has_styling {
+                deduped.insert(key, span);
+            }
+        } else {
+            deduped.insert(key, span);
+        }
     }
 
     // Convert back to vec
@@ -321,5 +331,27 @@ mod tests {
         let html = spans_to_html(source, spans);
         // No tags should be emitted
         assert_eq!(html, "hello world");
+    }
+
+    #[test]
+    fn test_comment_spell_dedupe() {
+        // When a node has @comment @spell, both produce spans with the same range.
+        // The @spell should NOT overwrite @comment - we should keep @comment.
+        let source = "# a comment";
+        let spans = vec![
+            Span {
+                start: 0,
+                end: 11,
+                capture: "comment".into(),
+            },
+            Span {
+                start: 0,
+                end: 11,
+                capture: "spell".into(),
+            },
+        ];
+        let html = spans_to_html(source, spans);
+        // Should have comment styling, not be unstyled
+        assert_eq!(html, "<a-c># a comment</a-c>");
     }
 }

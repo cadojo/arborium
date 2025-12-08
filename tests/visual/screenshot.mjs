@@ -19,6 +19,11 @@ const VIEWPORT = { width: 800, height: 600 };
 const DEVICE_SCALE_FACTOR = 2; // HiDPI for crisp text rendering
 const BASE_URL = process.env.DEMO_URL || 'http://127.0.0.1:8000';
 const THRESHOLD = 0.1; // 0.1% pixel difference allowed
+// SSIM threshold for skipping update in --update mode.
+// Due to JXL lossy compression, even identical screenshots will have minor differences
+// after a PNG->JXL->PNG roundtrip. DSSIM ~50 is typical for compression artifacts.
+// 1/(1+50) ≈ 0.02, so we use 0.01 as threshold (anything above = similar enough)
+const SSIM_THRESHOLD = 0.01;
 // Note: Keep parallel browsers low to avoid Chromium WASM OOM crashes
 const PARALLEL_BROWSERS = parseInt(process.env.PARALLEL_BROWSERS || '2', 10);
 
@@ -81,6 +86,38 @@ function jxlToPng(jxlPath) {
         if (existsSync(pngPath)) {
             unlinkSync(pngPath);
         }
+    }
+}
+
+// Compute SSIM between two PNG files using ImageMagick
+// Returns a value between 0 and 1 (1 = identical)
+function computeSSIM(pngPath1, pngPath2) {
+    try {
+        // ImageMagick compare outputs: "distortion (ssim)" e.g. "0 (1)" or "5512.77 (0.0841195)"
+        // For identical images it outputs "0 (0)" which is confusing - the parenthesized value
+        // is actually 1-SSIM for some metrics. Let's use DSSIM which is clearer.
+        const result = execSync(
+            `magick compare -metric DSSIM "${pngPath1}" "${pngPath2}" null: 2>&1`,
+            { stdio: 'pipe', encoding: 'utf-8' }
+        );
+        // DSSIM outputs just a number: 0 = identical, higher = more different
+        // Parse just the first number (ignore anything in parentheses)
+        const match = result.match(/^[\d.e+-]+/i);
+        if (match) {
+            const dssim = parseFloat(match[0]);
+            // Convert DSSIM to similarity: 1/(1+dssim) gives us 1 for identical, approaching 0 for very different
+            return isNaN(dssim) ? 0 : 1 / (1 + dssim);
+        }
+        return 0;
+    } catch (e) {
+        // compare returns exit code 1 when images differ, but still outputs the metric
+        const output = e.stdout?.toString() || e.stderr?.toString() || '';
+        const match = output.match(/^[\d.e+-]+/i);
+        if (match) {
+            const dssim = parseFloat(match[0]);
+            return isNaN(dssim) ? 0 : 1 / (1 + dssim);
+        }
+        return 0;
     }
 }
 
@@ -147,8 +184,16 @@ function compareImages(img1Buffer, img2Buffer) {
 }
 
 // Process a single language test
-async function processLanguage(context, language, updateMode, results) {
+async function processLanguage(context, language, updateMode, results, debugMode = false) {
     const page = await context.newPage();
+
+    // Capture console logs if in debug mode
+    const consoleLogs = [];
+    if (debugMode) {
+        page.on('console', msg => {
+            consoleLogs.push({ type: msg.type(), text: msg.text() });
+        });
+    }
 
     // Check for JXL snapshot first, then PNG
     const jxlSnapshotPath = join(SNAPSHOTS_DIR, `${language}.jxl`);
@@ -164,17 +209,52 @@ async function processLanguage(context, language, updateMode, results) {
 
         const hasExistingSnapshot = existsSync(jxlSnapshotPath) || existsSync(pngSnapshotPath);
 
-        if (updateMode || !hasExistingSnapshot) {
-            // Save new snapshot as PNG first, then convert to JXL
+        if (updateMode && hasExistingSnapshot) {
+            // In update mode with existing snapshot: check SSIM first
+            // Only write if images are different enough to matter
+            const tempPngPath = join(SNAPSHOTS_DIR, `${language}-new.png`);
+            writeFileSync(tempPngPath, screenshot);
+
+            // Decode existing snapshot to PNG for comparison
+            let existingPngPath;
+            if (snapshotPath.endsWith('.jxl')) {
+                existingPngPath = join(SNAPSHOTS_DIR, `${language}-existing.png`);
+                execSync(`magick "${snapshotPath}" "${existingPngPath}"`, { stdio: 'pipe' });
+            } else {
+                existingPngPath = snapshotPath;
+            }
+
+            const ssim = computeSSIM(existingPngPath, tempPngPath);
+
+            // Clean up temp existing PNG if we created it
+            if (snapshotPath.endsWith('.jxl') && existsSync(existingPngPath)) {
+                unlinkSync(existingPngPath);
+            }
+
+            if (ssim >= SSIM_THRESHOLD) {
+                // Images are similar enough, skip update
+                unlinkSync(tempPngPath);
+                return { lang: language, status: 'unchanged', ssim, consoleLogs };
+            } else {
+                // Images are different, update the snapshot
+                // Remove old snapshot
+                if (existsSync(jxlSnapshotPath)) unlinkSync(jxlSnapshotPath);
+                if (existsSync(pngSnapshotPath)) unlinkSync(pngSnapshotPath);
+                // Rename temp to final and convert to JXL
+                const finalPngPath = join(SNAPSHOTS_DIR, `${language}.png`);
+                if (tempPngPath !== finalPngPath) {
+                    writeFileSync(finalPngPath, readFileSync(tempPngPath));
+                    unlinkSync(tempPngPath);
+                }
+                pngToJxl(finalPngPath);
+                return { lang: language, status: 'updated', ssim, consoleLogs };
+            }
+        } else if (!hasExistingSnapshot) {
+            // No existing snapshot, create new one
             const tempPngPath = join(SNAPSHOTS_DIR, `${language}.png`);
             writeFileSync(tempPngPath, screenshot);
             pngToJxl(tempPngPath);
-
-            if (updateMode) {
-                return { lang: language, status: 'updated' };
-            } else {
-                return { lang: language, status: 'new' };
-            }
+            return { lang: language, status: 'new', consoleLogs };
         } else {
             // Load existing snapshot (decode JXL if needed)
             let existing;
@@ -187,7 +267,7 @@ async function processLanguage(context, language, updateMode, results) {
             const { match, diffPercent, diff } = compareImages(existing, screenshot);
 
             if (match) {
-                return { lang: language, status: 'pass' };
+                return { lang: language, status: 'pass', consoleLogs };
             } else {
                 // Save diff image
                 if (diff) {
@@ -195,11 +275,11 @@ async function processLanguage(context, language, updateMode, results) {
                 }
                 // Save actual screenshot for comparison
                 writeFileSync(join(DIFF_DIR, `${language}-actual.png`), screenshot);
-                return { lang: language, status: 'fail', diffPercent };
+                return { lang: language, status: 'fail', diffPercent, consoleLogs };
             }
         }
     } catch (e) {
-        return { lang: language, status: 'error', message: e.message };
+        return { lang: language, status: 'error', message: e.message, consoleLogs };
     } finally {
         await page.close();
     }
@@ -208,6 +288,7 @@ async function processLanguage(context, language, updateMode, results) {
 async function main() {
     const args = process.argv.slice(2);
     const updateMode = args.includes('--update');
+    const debugMode = args.includes('--debug');
     const specificLangs = args.filter(a => !a.startsWith('--'));
 
     // Ensure directories exist
@@ -258,7 +339,7 @@ async function main() {
 
     console.log(`Testing ${languages.length} languages with ${PARALLEL_BROWSERS} parallel browsers...`);
 
-    const results = { passed: [], failed: [], new: [], updated: [], errors: [] };
+    const results = { passed: [], failed: [], new: [], updated: [], unchanged: [], errors: [] };
 
     // Create browser contexts for parallel execution
     const contexts = await Promise.all(
@@ -275,13 +356,21 @@ async function main() {
     while (langIndex < totalLangs) {
         const batch = languages.slice(langIndex, langIndex + PARALLEL_BROWSERS);
         const batchPromises = batch.map((lang, i) =>
-            processLanguage(contexts[i % contexts.length], lang, updateMode, results)
+            processLanguage(contexts[i % contexts.length], lang, updateMode, results, debugMode)
         );
 
         const batchResults = await Promise.all(batchPromises);
 
         for (const result of batchResults) {
-            const { lang, status, diffPercent, message } = result;
+            const { lang, status, diffPercent, ssim, message, consoleLogs } = result;
+
+            // Print console logs if in debug mode
+            if (debugMode && consoleLogs && consoleLogs.length > 0) {
+                console.log(`\n  Console logs for ${lang}:`);
+                for (const log of consoleLogs) {
+                    console.log(`    [${log.type}] ${log.text}`);
+                }
+            }
 
             switch (status) {
                 case 'pass':
@@ -297,8 +386,12 @@ async function main() {
                     results.new.push(lang);
                     break;
                 case 'updated':
-                    process.stdout.write(`  ${lang}... UPDATED\n`);
+                    process.stdout.write(`  ${lang}... UPDATED (SSIM: ${ssim?.toFixed(6) || 'N/A'})\n`);
                     results.updated.push(lang);
+                    break;
+                case 'unchanged':
+                    process.stdout.write(`  ${lang}... UNCHANGED (SSIM: ${ssim?.toFixed(6) || 'N/A'})\n`);
+                    results.unchanged.push(lang);
                     break;
                 case 'skip':
                     process.stdout.write(`  ${lang}... SKIP (${message})\n`);
@@ -319,11 +412,12 @@ async function main() {
 
     // Summary
     console.log('\n--- Summary ---');
-    console.log(`Passed:  ${results.passed.length}`);
-    console.log(`Failed:  ${results.failed.length}`);
-    console.log(`New:     ${results.new.length}`);
-    console.log(`Updated: ${results.updated.length}`);
-    console.log(`Errors:  ${results.errors.length}`);
+    console.log(`Passed:    ${results.passed.length}`);
+    console.log(`Failed:    ${results.failed.length}`);
+    console.log(`New:       ${results.new.length}`);
+    console.log(`Updated:   ${results.updated.length}`);
+    console.log(`Unchanged: ${results.unchanged.length}`);
+    console.log(`Errors:    ${results.errors.length}`);
 
     if (results.failed.length > 0) {
         console.log('\nFailed languages:');

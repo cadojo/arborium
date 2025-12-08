@@ -44,6 +44,12 @@ let nextGrammarHandle = 1;
 // Map from handle to plugin
 const handleToPlugin = new Map<number, GrammarPlugin>();
 
+/** WIT Result type as returned by jco-generated code */
+interface WitResult<T, E> {
+  tag: 'ok' | 'err';
+  val: T | E;
+}
+
 /** Plugin interface as exported by jco-generated WIT components */
 interface JcoPlugin {
   languageId(): string;
@@ -51,7 +57,7 @@ interface JcoPlugin {
   createSession(): number;
   freeSession(session: number): void;
   setText(session: number, text: string): void;
-  parse(session: number): ParseResult;
+  parse(session: number): WitResult<ParseResult, { message: string }>;
 }
 
 /** A loaded grammar plugin (WIT component) */
@@ -138,7 +144,15 @@ async function loadGrammarPlugin(language: string): Promise<GrammarPlugin | null
         const session = jcoPlugin.createSession();
         try {
           jcoPlugin.setText(session, text);
-          return jcoPlugin.parse(session);
+          const result = jcoPlugin.parse(session);
+          // Unwrap WIT Result type
+          if (result.tag === 'ok') {
+            return result.val as ParseResult;
+          } else {
+            const err = result.val as { message: string };
+            console.error(`Parse error: ${err.message}`);
+            return { spans: [], injections: [] };
+          }
         } finally {
           jcoPlugin.freeSession(session);
         }
@@ -187,7 +201,12 @@ function setupHostInterface(): void {
       if (!plugin) {
         return { spans: [], injections: [] };
       }
-      return plugin.parse(text);
+      const result = plugin.parse(text);
+      // Debug: log injections
+      if (result.injections.length > 0) {
+        console.log(`[arborium] Language ${plugin.languageId} returned ${result.injections.length} injections:`, result.injections);
+      }
+      return result;
     },
   };
 }
