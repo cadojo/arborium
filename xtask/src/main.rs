@@ -60,7 +60,6 @@ enum Command {
         dry_run: bool,
 
         /// Version to use for generated Cargo.toml files
-        /// Also updates root Cargo.toml workspace.package.version and workspace.dependencies
         #[facet(args::named)]
         version: String,
 

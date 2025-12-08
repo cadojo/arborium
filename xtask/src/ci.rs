@@ -316,8 +316,10 @@ pub mod common {
     }
 
     /// Setup Rust cache.
+    /// Note: workspaces input tells it where to find Cargo.lock since there's no root workspace
     pub fn rust_cache() -> Step {
         Step::uses("Rust cache", "Swatinem/rust-cache@v2")
+            .with_inputs([("workspaces", "crates/arborium")])
     }
 
     /// Install cargo-nextest.
@@ -439,6 +441,7 @@ echo "Version: $VERSION (release: $IS_RELEASE)""#,
     // =========================================================================
 
     // Test Linux
+    // Note: no root workspace, so we target crates/arborium directly
     jobs.insert(
         "test-linux".into(),
         Job::new(runners::UBUNTU_32)
@@ -450,16 +453,17 @@ echo "Version: $VERSION (release: $IS_RELEASE)""#,
                 download_grammar_sources(),
                 extract_grammar_sources(),
                 rust_cache(),
-                Step::run("Build", "cargo build --verbose"),
-                Step::run("Run tests", "cargo nextest run --verbose"),
+                Step::run("Build", "cargo build --manifest-path crates/arborium/Cargo.toml --verbose"),
+                Step::run("Run tests", "cargo nextest run --manifest-path crates/arborium/Cargo.toml --verbose"),
                 Step::run(
                     "Build with all features",
-                    "cargo build --all-features --verbose",
+                    "cargo build --manifest-path crates/arborium/Cargo.toml --all-features --verbose",
                 ),
             ]),
     );
 
     // Test macOS (no container, needs to install tools)
+    // Note: no root workspace, so we target crates/arborium directly
     jobs.insert(
         "test-macos".into(),
         Job::new(runners::MACOS)
@@ -472,8 +476,8 @@ echo "Version: $VERSION (release: $IS_RELEASE)""#,
                 install_rust(),
                 rust_cache(),
                 install_nextest(),
-                Step::run("Build", "cargo build --verbose"),
-                Step::run("Run tests", "cargo nextest run --verbose"),
+                Step::run("Build", "cargo build --manifest-path crates/arborium/Cargo.toml --verbose"),
+                Step::run("Run tests", "cargo nextest run --manifest-path crates/arborium/Cargo.toml --verbose"),
             ]),
     );
 
@@ -512,6 +516,7 @@ echo "No env imports found - WASM modules are browser-compatible""#,
     );
 
     // Clippy
+    // Note: no root workspace, so we target crates/arborium directly
     jobs.insert(
         "clippy".into(),
         Job::new(runners::UBUNTU_32)
@@ -522,7 +527,7 @@ echo "No env imports found - WASM modules are browser-compatible""#,
                 checkout(),
                 download_grammar_sources(),
                 extract_grammar_sources(),
-                Step::run("Run Clippy", "cargo clippy --all-targets -- -D warnings"),
+                Step::run("Run Clippy", "cargo clippy --manifest-path crates/arborium/Cargo.toml --all-targets -- -D warnings"),
             ]),
     );
 
@@ -545,6 +550,7 @@ echo "No env imports found - WASM modules are browser-compatible""#,
     );
 
     // Documentation
+    // Note: no root workspace, so we target crates/arborium directly
     jobs.insert(
         "docs".into(),
         Job::new(runners::UBUNTU_32)
@@ -555,7 +561,7 @@ echo "No env imports found - WASM modules are browser-compatible""#,
                 checkout(),
                 download_grammar_sources(),
                 extract_grammar_sources(),
-                Step::run("Build docs", "cargo doc --no-deps")
+                Step::run("Build docs", "cargo doc --manifest-path crates/arborium/Cargo.toml --no-deps")
                     .with_env([("RUSTDOCFLAGS", "-D warnings")]),
             ]),
     );
