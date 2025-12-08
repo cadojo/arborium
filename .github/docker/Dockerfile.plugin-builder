@@ -41,16 +41,17 @@ RUN cargo binstall -y --locked cargo-workspaces
 # Install jco globally
 RUN npm install -g @bytecodealliance/jco
 
-# Copy arborium source and build xtask (with cache mounts for fast rebuilds)
-WORKDIR /arborium
-COPY . .
+# Copy xtask and its local dependencies, then build
+WORKDIR /build
+COPY xtask/ ./xtask/
+COPY crates/arborium-theme/ ./crates/arborium-theme/
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/arborium/target \
-    cargo build --release -p xtask \
+    --mount=type=cache,target=/build/xtask/target \
+    cd xtask && cargo build --release \
     && cp target/release/xtask /usr/local/bin/arborium-xtask
 
-# Clean up source (target is a cache mount so already gone)
-RUN rm -rf /arborium
+# Clean up source
+RUN rm -rf /build
 
 # Verify installations
 RUN cargo --version \
