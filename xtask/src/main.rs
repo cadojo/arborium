@@ -97,6 +97,10 @@ enum Command {
         #[facet(args::named, default)]
         group: Option<String>,
 
+        /// Output directory for built plugins
+        #[facet(args::named, args::short = 'o', default)]
+        output: Option<String>,
+
         /// Number of parallel jobs (default: 16)
         #[facet(args::named, args::short = 'j', default)]
         jobs: Option<usize>,
@@ -321,6 +325,7 @@ fn main() {
         Command::Build {
             grammars,
             group,
+            output,
             jobs,
             no_transpile,
             dev,
@@ -343,7 +348,7 @@ fn main() {
             let options = build::BuildOptions {
                 grammars,
                 group,
-                output_dir: None,
+                output_dir: output.map(camino::Utf8PathBuf::from),
                 transpile: !no_transpile,
                 jobs: jobs.unwrap_or(16),
             };
