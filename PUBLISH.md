@@ -123,7 +123,7 @@ inside a `def/` directory. Generated artifacts live next to it as `crate/`
 
 ```
 langs/
-├── group-squirrel/               (Web languages)
+├── group-acorn/                  (Web languages)
 │   ├── rust/
 │   │   ├── def/                  ← LANGUAGE DEFINITIONS (committed)
 │   │   │   ├── arborium.kdl      ← SOURCE OF TRUTH
@@ -138,34 +138,15 @@ langs/
 │   ├── javascript/
 │   ├── html/
 │   └── [other web languages...]
-├── group-deer/                   (C family)
-│   ├── c/
-│   ├── cpp/
-│   ├── objc/
-│   └── [other C family languages...]
-├── group-fox/                    (Systems languages)
-│   ├── python/
-│   ├── go/
-│   ├── java/
-│   └── [other systems languages...]
-├── group-bear/                   (Web frameworks)
-│   ├── typescript/
-│   ├── tsx/
-│   ├── svelte/
-│   ├── vue/
-│   └── [other web frameworks...]
-├── group-wolf/                   (Data/config)
-│   ├── json/
-│   ├── yaml/
-│   ├── toml/
-│   ├── xml/
-│   └── [other data formats...]
-└── group-otter/                  (Scripting/other)
-    ├── bash/
-    ├── perl/
-    ├── php/
-    ├── ruby/
-    └── [other scripting languages...]
+├── group-birch/                  (Systems: C, C++, Rust, Go, Zig, etc.)
+├── group-cedar/                  (JVM: Java, Scala, Kotlin, Clojure)
+├── group-fern/                   (Functional: Haskell, OCaml, Elixir, etc.)
+├── group-hazel/                  (Scripting: Python, Ruby, Bash, Lua, etc.)
+├── group-maple/                  (Config/data: TOML, YAML, JSON, SQL, etc.)
+├── group-moss/                   (Scientific: R, Julia, MATLAB, GLSL, etc.)
+├── group-pine/                   (Modern: Swift, Dart, Zig, etc.)
+├── group-sage/                   (Legacy/enterprise: C#, VB, Elisp, etc.)
+└── group-willow/                 (Markup: Markdown, HTML templates, etc.)
 ```
 ### Generated (gitignored)
 
@@ -291,11 +272,12 @@ These projects use arborium for syntax highlighting:
 
 ### Blocking 1.0
 
+- [x] **Tree-named grammar groups** - 10 groups finalized (acorn, birch, cedar, etc.)
+- [x] **API stability review** - Documented above in "API Stability" section
 - [ ] **Language injection in browser** - HTML→JS→SQL nesting works in Rust but
       not yet in WASM host component
 - [ ] **Visual regression tests** - Playwright infrastructure exists but needs
       integration with CI
-- [ ] **API stability review** - Document public API surface, deprecation policy
 
 ### Nice to Have (post-1.0)
 
@@ -305,16 +287,21 @@ These projects use arborium for syntax highlighting:
 - [ ] Incremental parsing with `apply-edit` support
 - [ ] Sample files for all ~98 grammars (see `docs/samples_todo.md`)
 
+## API Stability
+
+| Crate | Stability | Notes |
+|-------|-----------|-------|
+| `arborium` | **Stable** | Main entry point, semver guarantees |
+| `arborium-highlight` | **Stable** | Core highlighting traits and types |
+| `arborium-theme` | **Stable** | Theme definitions and builtins |
+| `miette-arborium` | **Stable** | Miette integration |
+| `arborium-{lang}` | **Stable** | Per-language grammar crates |
+| `arborium-wire` | Internal | Plugin protocol, may change |
+| `arborium-plugin-runtime` | Internal | Plugin internals, may change |
+| `arborium-host` | Internal | WASM host, may change |
+| `arborium-sysroot` | Internal | WASM build support, may change |
+
 ## Publishing TODO
 
-- [ ] Finalize ~10 hand-crafted animal groups (squirrel, deer, fox, bear, wolf,
-      otter, …) and document which languages live where
-- [ ] Implement inventory system in arborium crate
-- [ ] Create arborium-collection crate with feature flags
-- [ ] Update `xtask publish` + `xtask tag` commands for:
-  - [ ] Group-based publishing (per-animal tags like v0.3.0-squirrel)
-  - [ ] Combined crates.io + npm publishing per group
-  - [ ] Inventory-aware dependency resolution
 - [ ] Update generate caching to tree-sitter-cli output only
 - [ ] Standardize wasm-opt settings to -Oz
-- [ ] Unify release.yml and npm-publish.yml into single workflow
