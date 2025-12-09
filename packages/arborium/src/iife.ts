@@ -77,6 +77,34 @@ function findCodeBlocks(selector: string): HTMLElement[] {
   return Array.from(document.querySelectorAll(selector));
 }
 
+/** Check if a code block already has syntax highlighting or semantic markup */
+function hasExistingHighlighting(block: HTMLElement): boolean {
+  // Check for common highlighting library markers
+  const highlightClasses = ['hljs', 'highlighted', 'prism-code', 'shiki'];
+  for (const cls of highlightClasses) {
+    if (block.classList.contains(cls)) return true;
+  }
+
+  // Check if there are spans with syntax highlighting classes inside
+  // (highlight.js, prism, etc. use spans with classes)
+  const spans = block.querySelectorAll('span[class]');
+  if (spans.length > 0) {
+    // If there are multiple spans with classes, likely already highlighted
+    // Be conservative: even a few spans suggest existing highlighting
+    const classedSpans = Array.from(spans).filter(
+      (s) => s.className && s.className.length > 0
+    );
+    if (classedSpans.length >= 3) return true;
+  }
+
+  // Check for semantic markup (e.g., docs.rs uses <a> tags for type/function links)
+  // If there are links inside the code, it has meaningful markup we shouldn't destroy
+  const links = block.querySelectorAll('a');
+  if (links.length >= 2) return true;
+
+  return false;
+}
+
 /** Get the language for a code block */
 function getLanguageForBlock(block: HTMLElement): string | null {
   // Check data-lang attribute
@@ -188,6 +216,10 @@ async function autoHighlight(): Promise<void> {
   for (const block of blocks) {
     // Skip already highlighted blocks
     if (block.hasAttribute('data-highlighted')) continue;
+
+    // Skip blocks that appear to have existing syntax highlighting
+    // (e.g., docs.rs uses spans with classes for highlighting)
+    if (hasExistingHighlighting(block)) continue;
 
     const language = getLanguageForBlock(block);
     if (language) {

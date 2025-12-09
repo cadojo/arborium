@@ -133,11 +133,38 @@ export function detectLanguage(source: string): string | null {
 }
 
 /**
- * Extract language from class name (e.g., "language-rust" -> "rust")
+ * Extract language from class name.
+ * Supports multiple patterns:
+ * - "language-rust" -> "rust" (standard)
+ * - "lang-rust" -> "rust" (common alternative)
+ * - "rust" -> "rust" (docs.rs style, bare language name)
  */
 export function extractLanguageFromClass(className: string): string | null {
-  const match = className.match(/\blanguage-(\w+)\b/);
-  return match ? match[1] : null;
+  // Try "language-*" pattern first (most specific)
+  const langMatch = className.match(/\blanguage-(\w+)\b/);
+  if (langMatch) return langMatch[1];
+
+  // Try "lang-*" pattern
+  const shortMatch = className.match(/\blang-(\w+)\b/);
+  if (shortMatch) return shortMatch[1];
+
+  // Try bare language names (for docs.rs compatibility)
+  // Only match known language names to avoid false positives
+  const knownLanguages = new Set([
+    'rust', 'javascript', 'typescript', 'python', 'ruby', 'go', 'java',
+    'c', 'cpp', 'csharp', 'php', 'swift', 'kotlin', 'scala', 'haskell',
+    'elixir', 'lua', 'sql', 'bash', 'shell', 'yaml', 'json', 'toml',
+    'html', 'css', 'xml', 'markdown', 'dockerfile', 'nginx', 'zig',
+    'text', 'plaintext', 'console', 'sh',
+  ]);
+
+  for (const cls of className.split(/\s+/)) {
+    if (knownLanguages.has(cls.toLowerCase())) {
+      return cls.toLowerCase();
+    }
+  }
+
+  return null;
 }
 
 /**
