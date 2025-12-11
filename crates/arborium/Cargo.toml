@@ -316,9 +316,6 @@ arborium-zsh = { version = "1.0.8", path = "../../langs/group-hazel/zsh/crate", 
 [dev-dependencies]
 indoc = "2"
 
-[package.metadata.docs.rs]
-rustdoc-args = ["--html-in-header", "arborium-header.html"]
-
 # WASM allocator (automatically enabled on wasm targets)
 [target.'cfg(target_family = "wasm")'.dependencies]
 dlmalloc = "0.2"
