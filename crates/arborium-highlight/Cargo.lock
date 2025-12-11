@@ -13,18 +13,34 @@ dependencies = [
 
 [[package]]
 name = "arborium-highlight"
-version = "0.1.0"
+version = "1.0.8"
 dependencies = [
  "arborium-theme",
+ "arborium-tree-sitter",
  "streaming-iterator",
- "tree-sitter-patched-arborium",
 ]
 
 [[package]]
+name = "arborium-sysroot"
+version = "1.0.8"
+
+[[package]]
 name = "arborium-theme"
-version = "0.3.0"
+version = "1.0.8"
 dependencies = [
  "toml",
+]
+
+[[package]]
+name = "arborium-tree-sitter"
+version = "1.0.8"
+dependencies = [
+ "arborium-sysroot",
+ "cc",
+ "regex",
+ "regex-syntax",
+ "streaming-iterator",
+ "tree-sitter-language",
 ]
 
 [[package]]
@@ -223,17 +239,6 @@ checksum = "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801"
 [[package]]
 name = "tree-sitter-language"
 version = "0.1.5"
-
-[[package]]
-name = "tree-sitter-patched-arborium"
-version = "0.25.10"
-dependencies = [
- "cc",
- "regex",
- "regex-syntax",
- "streaming-iterator",
- "tree-sitter-language",
-]
 
 [[package]]
 name = "unicode-ident"
