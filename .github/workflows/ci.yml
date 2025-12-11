@@ -586,7 +586,7 @@ jobs:
 
   publish-npm: 
     name: Publish npm
-    runs-on: depot-ubuntu-24.04-32
+    runs-on: ubuntu-latest
     container: "ghcr.io/bearcove/arborium-plugin-builder:latest"
     needs: 
       - generate

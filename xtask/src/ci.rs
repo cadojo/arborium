@@ -356,6 +356,8 @@ pub mod common {
 pub mod runners {
     pub const UBUNTU_32: &str = "depot-ubuntu-24.04-32";
     pub const MACOS: &str = "depot-macos-latest";
+    /// GitHub-hosted runner (required for OIDC trusted publishing)
+    pub const UBUNTU_GITHUB: &str = "ubuntu-latest";
 }
 
 const CONTAINER: &str = "ghcr.io/bearcove/arborium-plugin-builder:latest";
@@ -670,7 +672,7 @@ echo "No env imports found - WASM modules are browser-compatible""#,
 
         jobs.insert(
             "publish-npm".into(),
-            Job::new(runners::UBUNTU_32)
+            Job::new(runners::UBUNTU_GITHUB)
                 .name("Publish npm")
                 .container(CONTAINER)
                 .needs(npm_needs)

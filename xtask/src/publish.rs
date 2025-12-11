@@ -245,13 +245,11 @@ pub fn publish_npm(
 
     let mut published = 0;
     let mut skipped = 0;
-    let mut failed = 0;
 
     for package_dir in &packages {
         match publish_single_npm_package(package_dir, &canonical_version, dry_run)? {
             NpmPublishResult::Published => published += 1,
             NpmPublishResult::AlreadyExists => skipped += 1,
-            NpmPublishResult::Failed => failed += 1,
         }
     }
 
@@ -263,33 +261,17 @@ pub fn publish_npm(
             match publish_single_npm_package(&main_package, &canonical_version, dry_run)? {
                 NpmPublishResult::Published => published += 1,
                 NpmPublishResult::AlreadyExists => skipped += 1,
-                NpmPublishResult::Failed => failed += 1,
             }
         }
     }
 
     println!();
-    if failed == 0 {
-        println!(
-            "{} npm publish complete: {} published, {} skipped (already exist), {} failed",
-            "✓".green(),
-            published,
-            skipped,
-            failed
-        );
-    } else {
-        println!(
-            "{} npm publish complete: {} published, {} skipped (already exist), {} failed",
-            "!".yellow(),
-            published,
-            skipped,
-            failed
-        );
-    }
-
-    if failed > 0 {
-        return Err(miette::miette!("{} packages failed to publish", failed));
-    }
+    println!(
+        "{} npm publish complete: {} published, {} skipped (already exist)",
+        "✓".green(),
+        published,
+        skipped,
+    );
 
     Ok(())
 }
@@ -700,7 +682,6 @@ fn topological_sort_grammar_crates(
 enum NpmPublishResult {
     Published,
     AlreadyExists,
-    Failed,
 }
 
 /// Find all npm package directories.
@@ -898,8 +879,11 @@ fn publish_single_npm_package(
         return Ok(NpmPublishResult::AlreadyExists);
     }
 
-    // Real error
+    // Real error - fail immediately
     println!(" {}", "FAILED".red());
-    eprintln!("    stderr: {}", stderr);
-    Ok(NpmPublishResult::Failed)
+    Err(miette::miette!(
+        "npm publish failed for {}:\n{}",
+        name,
+        stderr
+    ))
 }
