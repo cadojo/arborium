@@ -17,11 +17,11 @@
     "./iife": {
       "import": "./dist/arborium.iife.js"
     },
-    "./themes/base.css": "./dist/themes/base.css",
-    "./themes/base-docsrs.css": "./dist/themes/base-docsrs.css",
     "./themes/alabaster.css": "./dist/themes/alabaster.css",
     "./themes/ayu-dark.css": "./dist/themes/ayu-dark.css",
     "./themes/ayu-light.css": "./dist/themes/ayu-light.css",
+    "./themes/base-docsrs.css": "./dist/themes/base-docsrs.css",
+    "./themes/base.css": "./dist/themes/base.css",
     "./themes/catppuccin-frappe.css": "./dist/themes/catppuccin-frappe.css",
     "./themes/catppuccin-latte.css": "./dist/themes/catppuccin-latte.css",
     "./themes/catppuccin-macchiato.css": "./dist/themes/catppuccin-macchiato.css",
@@ -85,5 +85,5 @@
   },
   "type": "module",
   "types": "./dist/arborium.d.ts",
-  "version": "1.0.2"
+  "version": "1.0.3"
 }
