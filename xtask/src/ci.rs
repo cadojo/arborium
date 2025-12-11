@@ -670,11 +670,11 @@ echo "No env imports found - WASM modules are browser-compatible""#,
                 "Install main package dependencies",
                 "cd packages/arborium && npm ci",
             ),
+            // No NODE_AUTH_TOKEN needed - OIDC trusted publishing uses id-token permission
             Step::run(
                 "Publish to npm",
                 "arborium-xtask publish npm -o dist/plugins",
-            )
-            .with_env([("NODE_AUTH_TOKEN", "${{ secrets.NPM_TOKEN }}")]),
+            ),
         ]);
 
         jobs.insert(

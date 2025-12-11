@@ -706,8 +706,5 @@ jobs:
       - 
         name: Publish to npm
         run: "set -e\narborium-xtask publish npm -o dist/plugins"
-        env: 
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
 
 
