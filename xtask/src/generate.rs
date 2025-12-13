@@ -156,6 +156,25 @@ struct DocsrsDemoReadmeTemplate<'a> {
     version: &'a str,
 }
 
+// Umbrella crate templates (arborium)
+#[derive(TemplateSimple)]
+#[template(path = "umbrella_lib.stpl.rs")]
+struct UmbrellaLibRsTemplate<'a> {
+    /// List of (crate_name, grammar_id) for all grammars
+    grammars: &'a [(String, String)],
+    /// List of (extension, canonical_id) pairs for detect_language function
+    extensions: &'a [(String, String)],
+}
+
+#[derive(TemplateSimple)]
+#[template(path = "umbrella_store.stpl.rs")]
+struct UmbrellaStoreTemplate<'a> {
+    /// List of (alias, canonical_id) pairs for language normalization
+    aliases: &'a [(String, String)],
+    /// List of (feature_name, module_name, grammar_id) for try_lang! macro
+    languages: &'a [(String, String, String)],
+}
+
 /// Generate crate files for all or a specific grammar.
 ///
 /// This follows the 5-function generation flow from generate.md:
@@ -1850,7 +1869,7 @@ fn plan_plugin_crate_files(
     Ok(plan)
 }
 
-/// Generate the umbrella crate (crates/arborium/Cargo.toml)
+/// Generate the umbrella crate (crates/arborium/Cargo.toml, src/lib.rs, src/provider.rs)
 /// This aggregates all grammar crates as optional dependencies with features.
 fn plan_umbrella_crate(prepared: &PreparedStructures) -> Result<Plan, Report> {
     let mut plan = Plan::for_crate("arborium");
@@ -1947,7 +1966,7 @@ dlmalloc = "0.2"
 "#,
     );
 
-    // Write or update the file
+    // Write or update the Cargo.toml file
     if cargo_toml_path.exists() {
         let old_content = fs::read_to_string(&cargo_toml_path)?;
         if old_content != content {
@@ -1962,7 +1981,7 @@ dlmalloc = "0.2"
         // Ensure directory exists
         if !umbrella_path.exists() {
             plan.add(Operation::CreateDir {
-                path: umbrella_path,
+                path: umbrella_path.clone(),
                 description: "Create umbrella crate directory".to_string(),
             });
         }
@@ -1970,6 +1989,119 @@ dlmalloc = "0.2"
             path: cargo_toml_path,
             content,
             description: "Create umbrella Cargo.toml".to_string(),
+        });
+    }
+
+    // =========================================================================
+    // Collect grammar data for templates
+    // =========================================================================
+    let src_dir = umbrella_path.join("src");
+    if !src_dir.exists() {
+        plan.add(Operation::CreateDir {
+            path: src_dir.clone(),
+            description: "Create umbrella src directory".to_string(),
+        });
+    }
+
+    // Build grammars list for lib.rs template: (crate_name, grammar_id)
+    let grammars_for_lib: Vec<(String, String)> = grammar_crates
+        .iter()
+        .filter(|(_, grammar_id, _)| !grammar_id.ends_with("_inline"))
+        .map(|(name, grammar_id, _)| (name.clone(), grammar_id.clone()))
+        .collect();
+
+    // Collect aliases and extensions from all grammars in the registry
+    let mut aliases: Vec<(String, String)> = Vec::new();
+    let mut extensions: Vec<(String, String)> = Vec::new();
+    let mut languages: Vec<(String, String, String)> = Vec::new();
+
+    for (_state, _config, grammar) in prepared.registry.all_grammars() {
+        let grammar_id = grammar.id().to_string();
+
+        // Skip internal grammars
+        if grammar.is_internal() || grammar_id.ends_with("_inline") {
+            continue;
+        }
+
+        // Build feature name, module name, and grammar ID for try_lang! macro
+        let feature = format!("lang-{}", grammar_id);
+        let module = format!("lang_{}", grammar_id.replace('-', "_"));
+        languages.push((feature, module, grammar_id.clone()));
+
+        // Add canonical ID as an extension (e.g., "rust" -> "rust")
+        extensions.push((grammar_id.clone(), grammar_id.clone()));
+
+        // Collect aliases (used for both store.rs normalization and lib.rs extensions)
+        if let Some(ref alias_config) = grammar.aliases {
+            for alias in &alias_config.values {
+                aliases.push((alias.clone(), grammar_id.clone()));
+                // Aliases also serve as file extensions
+                extensions.push((alias.clone(), grammar_id.clone()));
+            }
+        }
+    }
+
+    // Sort for deterministic output
+    aliases.sort();
+    extensions.sort();
+    languages.sort();
+
+    // =========================================================================
+    // Generate src/lib.rs from template
+    // =========================================================================
+    let lib_rs_content = UmbrellaLibRsTemplate {
+        grammars: &grammars_for_lib,
+        extensions: &extensions,
+    }
+    .render_once()
+    .expect("UmbrellaLibRsTemplate render failed");
+
+    let lib_rs_path = src_dir.join("lib.rs");
+    if lib_rs_path.exists() {
+        let old_content = fs::read_to_string(&lib_rs_path)?;
+        if old_content != lib_rs_content {
+            plan.add(Operation::UpdateFile {
+                path: lib_rs_path,
+                old_content: Some(old_content),
+                new_content: lib_rs_content,
+                description: "Update umbrella src/lib.rs".to_string(),
+            });
+        }
+    } else {
+        plan.add(Operation::CreateFile {
+            path: lib_rs_path,
+            content: lib_rs_content,
+            description: "Create umbrella src/lib.rs".to_string(),
+        });
+    }
+
+    // =========================================================================
+    // Generate src/store.rs from template
+    // =========================================================================
+
+    let store_rs_content = UmbrellaStoreTemplate {
+        aliases: &aliases,
+        languages: &languages,
+    }
+    .render_once()
+    .expect("UmbrellaStoreTemplate render failed");
+
+    let store_rs_path = src_dir.join("store.rs");
+    if store_rs_path.exists() {
+        let old_content = fs::read_to_string(&store_rs_path)?;
+        if old_content != store_rs_content {
+            plan.add(Operation::UpdateFile {
+                path: store_rs_path,
+                old_content: Some(old_content),
+                new_content: store_rs_content,
+                description: "Update umbrella src/store.rs".to_string(),
+            });
+        }
+    } else {
+        plan.add(Operation::CreateFile {
+            path: store_rs_path,
+            content: store_rs_content,
+            description: "Create umbrella src/store.rs".to_string(),
         });
     }
 
