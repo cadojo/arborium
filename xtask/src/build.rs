@@ -527,6 +527,10 @@ pub struct PluginManifestEntry {
     pub cdn_wasm: String,
     pub local_js: String,
     pub local_wasm: String,
+    pub size_bytes: u64,
+    pub size_gzip: u64,
+    pub size_brotli: u64,
+    pub c_lines: u64,
 }
 
 #[derive(Debug, Clone, facet::Facet)]
@@ -620,7 +624,7 @@ pub fn build_plugins(repo_root: &Utf8Path, options: &BuildOptions) -> Result<()>
             );
 
             match result {
-                Ok(()) => {
+                Ok(_) => {
                     printer.print_success(grammar);
                 }
                 Err(e) => {
@@ -882,7 +886,7 @@ fn build_single_plugin(
     wasm_bindgen: &crate::tool::ToolPath,
     wasm_opt: &crate::tool::ToolPath,
     printer: &OutputPrinter,
-) -> Result<()> {
+) -> Result<(u64, u64, u64)> {
     printer.print_line(grammar, "Building...", false);
 
     let (crate_state, _) = locate_grammar(registry, grammar).ok_or_else(|| {
@@ -1098,7 +1102,79 @@ fn build_single_plugin(
     .into_diagnostic()
     .context("failed to write package.json")?;
 
-    Ok(())
+    // Calculate WASM sizes for the final optimized file
+    let (size_bytes, size_gzip, size_brotli) = calculate_wasm_sizes(&dest_wasm)?;
+
+    Ok((size_bytes, size_gzip, size_brotli))
+}
+
+/// Count lines of C code in parser.c (and scanner.c if present)
+pub fn count_c_lines(crate_path: &Utf8Path) -> u64 {
+    let mut total = 0;
+
+    // Count parser.c (in src/)
+    let parser_c = crate_path.join("grammar/src/parser.c");
+    if let Ok(content) = fs_err::read_to_string(&parser_c) {
+        total += content.lines().count() as u64;
+    }
+
+    // Count scanner.c if it exists (try src/ first, then grammar/)
+    let scanner_c_src = crate_path.join("grammar/src/scanner.c");
+    let scanner_c_root = crate_path.join("grammar/scanner.c");
+
+    if let Ok(content) = fs_err::read_to_string(&scanner_c_src) {
+        total += content.lines().count() as u64;
+    } else if let Ok(content) = fs_err::read_to_string(&scanner_c_root) {
+        total += content.lines().count() as u64;
+    }
+
+    total
+}
+
+pub fn calculate_wasm_sizes(wasm_path: &Utf8Path) -> Result<(u64, u64, u64)> {
+    use flate2::Compression;
+    use flate2::write::GzEncoder;
+    use std::io::Write;
+
+    // Uncompressed size
+    let metadata = fs_err::metadata(wasm_path)
+        .into_diagnostic()
+        .context("failed to read WASM file metadata")?;
+    let size_bytes = metadata.len();
+
+    // Read file into memory
+    let wasm_data = fs_err::read(wasm_path)
+        .into_diagnostic()
+        .context("failed to read WASM file")?;
+
+    // Gzip compression
+    let mut gz_encoder = GzEncoder::new(Vec::new(), Compression::best());
+    gz_encoder
+        .write_all(&wasm_data)
+        .into_diagnostic()
+        .context("failed to write to gzip encoder")?;
+    let size_gzip = gz_encoder
+        .finish()
+        .into_diagnostic()
+        .context("failed to finish gzip compression")?
+        .len() as u64;
+
+    // Brotli compression (quality 11 = max)
+    let mut brotli_output = Vec::new();
+    let mut brotli_encoder = brotli::CompressorWriter::new(
+        &mut brotli_output,
+        4096, // buffer size
+        11,   // quality (max)
+        22,   // lg_window_size
+    );
+    brotli_encoder
+        .write_all(&wasm_data)
+        .into_diagnostic()
+        .context("failed to write to brotli encoder")?;
+    drop(brotli_encoder);
+    let size_brotli = brotli_output.len() as u64;
+
+    Ok((size_bytes, size_gzip, size_brotli))
 }
 
 pub fn locate_grammar<'a>(
@@ -1221,6 +1297,12 @@ fn build_manifest(
             grammar, version
         );
 
+        // Calculate WASM sizes
+        let (size_bytes, size_gzip, size_brotli) = calculate_wasm_sizes(&local_wasm)?;
+
+        // Count C lines in parser
+        let c_lines = count_c_lines(&state.crate_path);
+
         entries.push(PluginManifestEntry {
             language: grammar.clone(),
             package: package.clone(),
@@ -1229,6 +1311,10 @@ fn build_manifest(
             cdn_wasm: format!("{}/grammar_bg.wasm", cdn_base),
             local_js: format!("/{}", rel_js),
             local_wasm: format!("/{}", rel_wasm),
+            size_bytes,
+            size_gzip,
+            size_brotli,
+            c_lines,
         });
     }
 

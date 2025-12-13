@@ -45,6 +45,7 @@ struct CodeBlocks {
     js_esm: String,
     docsrs_script: String,
     docsrs_cargo: String,
+    rustdoc_postprocess: String,
     miette_example: String,
     html_example_traditional: String,
     html_example_arborium: String,
@@ -787,6 +788,11 @@ const html = await highlight('rust', sourceCode);"#,
             "toml",
             r#"[package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "arborium-header.html"]"#,
+        ),
+        rustdoc_postprocess: highlight_code(
+            "bash",
+            r#"# Process rustdoc output in-place
+arborium-rustdoc ./target/doc ./target/doc-highlighted"#,
         ),
         miette_example: highlight_code(
             "rust",

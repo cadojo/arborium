@@ -434,88 +434,10 @@ function updateLangInfoPanel(id) {
         ? `<a class="lang-name-link" href="${linkUrl}" target="_blank" rel="noopener">${headingText}</a>`
         : `<span class="lang-name">${headingText}</span>`;
 
-    // Update sample bar (separate from panel)
+    // Sample bar is no longer used - attribution moved to status div
     const sampleBar = document.getElementById('sample-bar');
-    if (info.sample && sampleBar) {
-        const s = info.sample;
-        // Parse org/repo from URL like https://github.com/org/repo/...
-        let repoLabel = 'Source';
-        if (s.link) {
-            try {
-                const url = new URL(s.link);
-                const parts = url.pathname.split('/').filter(Boolean);
-                if (parts.length >= 2) {
-                    repoLabel = `${parts[0]}/${parts[1]}`;
-                }
-            } catch (e) {
-                // Keep default
-            }
-        }
-        const gitIcon = icons['mdi:git'] || icons['mdi:source-branch'] || '';
-        const scalesIcon = icons['mdi:scale-balance'] || '';
-        const descText = s.description || 'Sample code';
-        sampleBar.innerHTML = `
-            <span class="sample-desc" title="${descText}">${descText}</span>
-            ${s.license ? `<span class="sample-license"><span class="sample-license-icon">${scalesIcon}</span>${s.license}</span>` : ''}
-            ${s.link ? `<a class="sample-link" href="${s.link}" target="_blank" rel="noopener"><span class="sample-icon">${gitIcon}</span>${repoLabel}</a>` : ''}
-        `;
-        sampleBar.classList.add('visible');
-    } else if (sampleBar) {
+    if (sampleBar) {
         sampleBar.classList.remove('visible');
-    }
-
-    // Build sources section (grammar + theme attribution)
-    let sourcesHtml = '';
-    const gitIcon = icons['mdi:git'] || icons['mdi:source-branch'] || '';
-    const scalesIcon = icons['mdi:scale-balance'] || '';
-    const paletteIcon = icons['mdi:palette'] || '';
-
-    if (info.grammarRepo || (selectedTheme && themeInfo[selectedTheme]?.source)) {
-        let grammarHtml = '';
-        let themeHtml = '';
-
-        if (info.grammarRepo) {
-            // Parse org/repo from URL
-            let repoLabel = 'Grammar';
-            try {
-                const url = new URL(info.grammarRepo);
-                const parts = url.pathname.split('/').filter(Boolean);
-                if (parts.length >= 2) {
-                    repoLabel = `${parts[0]}/${parts[1]}`;
-                }
-            } catch (e) {
-                // Keep default
-            }
-            grammarHtml = `<a class="source-link" href="${info.grammarRepo}" target="_blank" rel="noopener"><span class="source-icon">${gitIcon}</span>${repoLabel}</a>`;
-            if (info.grammarLicense) {
-                grammarHtml += `<span class="source-license"><span class="source-license-icon">${scalesIcon}</span>${info.grammarLicense}</span>`;
-            }
-        }
-
-        if (selectedTheme && themeInfo[selectedTheme]?.source) {
-            const themeSource = themeInfo[selectedTheme].source;
-            const themeName = themeInfo[selectedTheme].name;
-            // Parse domain or repo from URL
-            let sourceLabel = themeName;
-            try {
-                const url = new URL(themeSource);
-                if (url.hostname.includes('github.com')) {
-                    const parts = url.pathname.split('/').filter(Boolean);
-                    if (parts.length >= 2) {
-                        sourceLabel = `${parts[0]}/${parts[1]}`;
-                    }
-                } else {
-                    sourceLabel = url.hostname.replace('www.', '');
-                }
-            } catch (e) {
-                // Keep default
-            }
-            themeHtml = `<a class="source-link" href="${themeSource}" target="_blank" rel="noopener"><span class="source-icon">${paletteIcon}</span>${sourceLabel}</a>`;
-        }
-
-        if (grammarHtml || themeHtml) {
-            sourcesHtml = `<div class="card-sources">${grammarHtml}${themeHtml}</div>`;
-        }
     }
 
     panel.innerHTML = `
@@ -525,9 +447,11 @@ function updateLangInfoPanel(id) {
         ${attribution ? `<div class="card-attribution">${attribution}</div>` : ''}
         ${info.description ? `<div class="card-body"><p class="card-description">${info.description}</p></div>` : ''}
         ${info.trivia ? `<div class="card-trivia">${info.trivia}</div>` : ''}
-        ${sourcesHtml}
     `;
     panel.classList.add('visible');
+
+    // Update attribution in status bar
+    updateAttribution();
 }
 
 // Enter search mode
@@ -1073,6 +997,9 @@ async function initialize() {
             selectLanguage(allLanguages[0]);
         }
 
+        // Initialize size comparison table
+        initSizeTable();
+
     } catch (error) {
         console.error('Failed to initialize:', error);
         document.getElementById('output').innerHTML = `<span class="error">Failed to initialize: ${error}</span>`;
@@ -1123,9 +1050,93 @@ async function doHighlight() {
 }
 
 function updateStatus(message, success) {
+    // Status is now used for attribution, not messages
+    // This function is kept for backwards compatibility but does nothing
+}
+
+function updateAttribution() {
     const status = document.getElementById('status');
-    status.textContent = message;
-    status.className = success ? 'status success' : 'status';
+    if (!status) return;
+
+    const info = languageInfo[selectedLang];
+    if (!info) {
+        status.innerHTML = '';
+        return;
+    }
+
+    // Get sample info
+    const sampleInfo = info.sample;
+
+    // Build attribution HTML
+    const gitIcon = icons['mdi:git'] || icons['mdi:source-branch'] || '';
+    const scalesIcon = icons['mdi:scale-balance'] || '';
+
+    let parts = [];
+
+    // Sample source link
+    if (sampleInfo && sampleInfo.link) {
+        let repoLabel = 'Source';
+        try {
+            const url = new URL(sampleInfo.link);
+            const pathParts = url.pathname.split('/').filter(Boolean);
+            if (pathParts.length >= 2) {
+                repoLabel = `${pathParts[0]}/${pathParts[1]}`;
+            }
+        } catch (e) {
+            // Keep default
+        }
+        parts.push(`<a href="${sampleInfo.link}" target="_blank" rel="noopener"><span class="attr-icon">${gitIcon}</span>${repoLabel}</a>`);
+    }
+
+    // Sample license
+    if (sampleInfo && sampleInfo.license) {
+        parts.push(`<span class="attr-license"><span class="attr-icon">${scalesIcon}</span>${sampleInfo.license}</span>`);
+    }
+
+    // Grammar source link
+    if (info.grammarRepo) {
+        let repoLabel = 'Grammar';
+        try {
+            const url = new URL(info.grammarRepo);
+            const pathParts = url.pathname.split('/').filter(Boolean);
+            if (pathParts.length >= 2) {
+                repoLabel = `${pathParts[0]}/${pathParts[1]}`;
+            }
+        } catch (e) {
+            // Keep default
+        }
+        parts.push(`<a href="${info.grammarRepo}" target="_blank" rel="noopener"><span class="attr-icon">${gitIcon}</span>${repoLabel}</a>`);
+    }
+
+    // Grammar license
+    if (info.grammarLicense) {
+        parts.push(`<span class="attr-license"><span class="attr-icon">${scalesIcon}</span>${info.grammarLicense}</span>`);
+    }
+
+    // Theme source
+    if (selectedTheme && themeInfo[selectedTheme]?.source) {
+        const paletteIcon = icons['mdi:palette'] || '';
+        const themeSource = themeInfo[selectedTheme].source;
+        const themeName = themeInfo[selectedTheme].name;
+        let sourceLabel = themeName;
+        try {
+            const url = new URL(themeSource);
+            if (url.hostname.includes('github.com')) {
+                const pathParts = url.pathname.split('/').filter(Boolean);
+                if (pathParts.length >= 2) {
+                    sourceLabel = `${pathParts[0]}/${pathParts[1]}`;
+                }
+            } else {
+                sourceLabel = url.hostname.replace('www.', '');
+            }
+        } catch (e) {
+            // Keep default
+        }
+        parts.push(`<a href="${themeSource}" target="_blank" rel="noopener"><span class="attr-icon">${paletteIcon}</span>${sourceLabel}</a>`);
+    }
+
+    status.innerHTML = parts.join('<span class="attr-separator">·</span>');
+    status.className = 'status attribution';
 }
 
 document.getElementById('source').addEventListener('input', doHighlight);
@@ -1207,6 +1218,165 @@ if (randomBtn) {
         selectLanguage(randomLang);
         selectTheme(randomTheme);
     });
+}
+
+// ============================================================================
+// Size Comparison Table
+// ============================================================================
+
+let currentFormat = 'brotli';
+let currentSort = 'size';
+let sizeData = [];
+let filteredData = [];
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+}
+
+function formatCLines(lines) {
+    if (lines === 0) return '0';
+    if (lines >= 1000000) {
+        const m = lines / 1000000;
+        return (m % 1 === 0) ? m.toFixed(0) + 'M' : m.toFixed(1) + 'M';
+    }
+    if (lines >= 1000) {
+        const k = lines / 1000;
+        return (k % 1 === 0) ? k.toFixed(0) + 'K' : k.toFixed(1) + 'K';
+    }
+    return lines.toString();
+}
+
+function getSizeField() {
+    return currentFormat === 'brotli' ? 'size_brotli' :
+           currentFormat === 'gzip' ? 'size_gzip' : 'size_bytes';
+}
+
+function renderSizeTable() {
+    const tbody = document.getElementById('size-table-body');
+    if (!tbody) return;
+
+    const sizeField = getSizeField();
+
+    // Calculate stats
+    const sizes = filteredData.map(d => d[sizeField]);
+    if (sizes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem; opacity: 0.5;">No matching languages</td></tr>';
+        document.getElementById('size-min').textContent = '-';
+        document.getElementById('size-avg').textContent = '-';
+        document.getElementById('size-max').textContent = '-';
+        document.getElementById('size-total').textContent = '-';
+        return;
+    }
+
+    const min = Math.min(...sizes);
+    const max = Math.max(...sizes);
+    const avg = sizes.reduce((a, b) => a + b, 0) / sizes.length;
+    const total = sizes.reduce((a, b) => a + b, 0);
+
+    // Update stats display
+    document.getElementById('size-min').textContent = formatBytes(min);
+    document.getElementById('size-avg').textContent = formatBytes(avg);
+    document.getElementById('size-max').textContent = formatBytes(max);
+    document.getElementById('size-total').textContent = formatBytes(total);
+
+    // Render rows
+    tbody.innerHTML = filteredData.map(item => {
+        const size = item[sizeField];
+        const percent = max === min ? 50 : ((size - min) / (max - min)) * 100;
+        const info = languageInfo[item.language] || { name: item.language, icon: '' };
+        const iconSvg = getIconSvg(item.language);
+
+        const cLines = item.c_lines || 0;
+        const formattedCLines = formatCLines(cLines);
+
+        return `
+            <tr>
+                <td class="col-language">
+                    <span class="lang-icon">${iconSvg}</span>
+                    <span class="lang-name">${info.name || item.language}</span>
+                </td>
+                <td class="col-c-lines">${formattedCLines}</td>
+                <td class="col-size">${formatBytes(size)}</td>
+                <td class="col-bar">
+                    <div class="size-bar-container">
+                        <div class="size-bar" style="width: ${percent}%"></div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function sortAndRenderSizeTable() {
+    const sizeField = getSizeField();
+
+    if (currentSort === 'name') {
+        filteredData.sort((a, b) => {
+            const nameA = (languageInfo[a.language] || {}).name || a.language;
+            const nameB = (languageInfo[b.language] || {}).name || b.language;
+            return nameA.localeCompare(nameB);
+        });
+    } else {
+        filteredData.sort((a, b) => b[sizeField] - a[sizeField]);
+    }
+
+    renderSizeTable();
+}
+
+function initSizeTable() {
+    // Check if size table exists on the page
+    if (!document.getElementById('size-table')) return;
+
+    // Load size data from registry (already loaded in initialize())
+    if (!registry || !registry.entries) {
+        console.warn('Registry not loaded yet, skipping size table initialization');
+        return;
+    }
+
+    sizeData = registry.entries;
+    filteredData = [...sizeData];
+
+    // Attach event listeners for format selector
+    document.querySelectorAll('.format-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+            e.target.closest('.format-btn').classList.add('active');
+            currentFormat = e.target.closest('.format-btn').dataset.format;
+            sortAndRenderSizeTable();
+        });
+    });
+
+    // Attach event listeners for sort buttons
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            currentSort = e.target.dataset.sort;
+            sortAndRenderSizeTable();
+        });
+    });
+
+    // Attach event listener for search input
+    const searchInput = document.getElementById('size-table-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            filteredData = sizeData.filter(item => {
+                const info = languageInfo[item.language] || { name: item.language };
+                const name = info.name || item.language;
+                return name.toLowerCase().includes(query) ||
+                       item.language.toLowerCase().includes(query);
+            });
+            sortAndRenderSizeTable();
+        });
+    }
+
+    // Initial render
+    sortAndRenderSizeTable();
 }
 
 initialize();

@@ -35,7 +35,9 @@
                 icons["mdi:apple"] %><%- icons["mdi:linux"] %><%- icons["mdi:microsoft-windows"]
                 %><%- icons["mdi:check-circle"] %><%- icons["mdi:chevron-down"] %><%-
                 icons["mdi:shuffle-variant"] %><%- icons["mdi:git"] %><%- icons["mdi:scale-balance"]
-                %>
+                %><%- icons["mdi:language-html5"] %><%- icons["mdi:nodejs"] %><%- icons["mdi:heart"] %><%-
+                icons["mdi:cat"] %><%- icons["mdi:lightning-bolt"] %><%- icons["mdi:package-variant-closed"]
+                %><%- icons["mdi:zip-box"] %><%- icons["mdi:file-outline"] %>
             </div>
 
             <div class="page-header">
@@ -171,6 +173,8 @@
                 <a href="#languages" class="nav-link">Languages</a>
                 <a href="#themes" class="nav-link">Themes</a>
                 <a href="#html-tags" class="nav-link">HTML Tags</a>
+                <a href="#size-comparison" class="nav-link">Sizes</a>
+                <a href="#wasm-build" class="nav-link">Build</a>
                 <a href="#faq" class="nav-link">FAQ</a>
             </nav>
 
@@ -253,7 +257,14 @@
                     <h3>Get Started</h3>
                     <div class="get-started-options">
                         <div class="get-started-option">
-                            <h4>Script tag (zero config)</h4>
+                            <h4><%- icons["devicon-plain:rust"] %> Rust (native or WASM)</h4>
+                            <p>Add to your <code>Cargo.toml</code>:</p>
+                            <pre class="code-block"><code><%- code.cargo_toml %></code></pre>
+                            <p>Then highlight code:</p>
+                            <pre class="code-block"><code><%- code.rust_highlight %></code></pre>
+                        </div>
+                        <div class="get-started-option">
+                            <h4><%- icons["mdi:language-html5"] %> Script tag (zero config)</h4>
                             <p>
                                 Add this to your HTML and all
                                 <code>&lt;pre&gt;&lt;code&gt;</code> blocks get highlighted
@@ -273,14 +284,7 @@
                             <p><a href="iife-demo.html">See the IIFE demo →</a></p>
                         </div>
                         <div class="get-started-option">
-                            <h4>Rust (native or WASM)</h4>
-                            <p>Add to your <code>Cargo.toml</code>:</p>
-                            <pre class="code-block"><code><%- code.cargo_toml %></code></pre>
-                            <p>Then highlight code:</p>
-                            <pre class="code-block"><code><%- code.rust_highlight %></code></pre>
-                        </div>
-                        <div class="get-started-option">
-                            <h4>npm (ESM)</h4>
+                            <h4><%- icons["mdi:nodejs"] %> npm (ESM)</h4>
                             <p>For bundlers or manual control:</p>
                             <pre class="code-block"><code><%- code.js_esm %></code></pre>
                             <p>Grammars are loaded on-demand from jsdelivr (configurable).</p>
@@ -292,7 +296,7 @@
                     <h3>Integrations</h3>
                     <div class="integrations-grid">
                         <div class="integration-item">
-                            <h4><%- icons["mdi:book-open-page-variant"] %> docs.rs</h4>
+                            <h4><%- icons["mdi:book-open-page-variant"] %> Your crate docs</h4>
                             <p>
                                 Highlight TOML, shell, and other languages in your rustdoc. Create
                                 <code>arborium-header.html</code>:
@@ -305,7 +309,25 @@
                             </p>
                         </div>
                         <div class="integration-item">
-                            <h4><%- icons["mdi:alert-circle-outline"] %> miette-arborium</h4>
+                            <h4><%- icons["mdi:heart"] %> docs.rs team</h4>
+                            <p>
+                                If you maintain docs.rs or rustdoc, you could integrate arborium
+                                directly! Either <a href="https://github.com/rust-lang/rust/pull/149944">merge this PR</a>
+                                for native rustdoc support, or use <code>arborium-rustdoc</code> as a
+                                post-processing step:
+                            </p>
+                            <pre class="code-block"><code><%- code.rustdoc_postprocess %></code></pre>
+                            <p>
+                                It streams through HTML, finds <code>&lt;pre class="language-*"&gt;</code>
+                                blocks, and highlights them in-place. Works with rustdoc's theme system.
+                            </p>
+                            <p class="integration-links">
+                                <a href="https://crates.io/crates/arborium-rustdoc">crates.io</a> ·
+                                <a href="https://docs.rs/arborium-rustdoc">docs.rs</a>
+                            </p>
+                        </div>
+                        <div class="integration-item">
+                            <h4><%- icons["mdi:cat"] %> miette-arborium</h4>
                             <p>
                                 Syntax highlighting for
                                 <a href="https://crates.io/crates/miette">miette</a> error
@@ -319,11 +341,15 @@
                             </p>
                         </div>
                         <div class="integration-item">
-                            <h4><%- icons["mdi:file-document-outline"] %> dodeca</h4>
+                            <h4><svg viewBox="0 0 64 64" width="1.2em" height="1.2em"><path d="m42.73999 18.59998h-20.42999l-6.40003 19.40002 16.47003 11.98999 16.58002-11.98999z" fill="#7aba7a"></path><path d="m13.95001 37.56001s6.52997-19.79005 6.52997-19.79005c-.91948-1.267-5.1235-7.08827-5.95995-8.25001 0 0-9.99 13.36005-9.99 13.36005-.13.17999-.20001.38995-.20001.60999l.26996 16.59998s8.64801-2.34309 9.35003-2.52996z" fill="#5d8a5d"></path><path d="m5.20003 42.00001s9.56999 13.23998 9.56999 13.23998c.13.16998.29999.29999.5.37l15.40997 5.09003c.09111-1.37.55626-7.49243.66002-8.98005.00001.00001-16.80998-12.24999-16.80998-12.24999s-8.84918 2.3889-9.33 2.53004z" fill="#4a6a4a"></path><path d="m50.34003 39.45996-17 12.31c-.11033 1.58125-.55533 7.50644-.66004 8.99005 0 0 16.12-4.98004 16.12-4.98004.21002-.06.39001-.20001.52002-.37l9.77002-13.75c-.38045-.09106-8.75-2.20001-8.75-2.20001z" fill="#6a9a6a"></path><path d="m22.09998 16.59998h20.84003c.84413-1.28877 4.57061-6.89599 5.33003-8.08996-.00001 0-15.67005-5.45002-15.67005-5.45002-.20996-.08002-.44-.08002-.64996-.01001l-15.79999 5.31c.26188.35504 5.94995 8.23999 5.94995 8.23999z" fill="#8fbc8f"></path><path d="m44.58002 17.75 6.33997 19.79999c1.47743.36511 7.3731 1.85349 8.75 2.19001 0 0-.01001-16.22999-.01001-16.22999 0-.21002-.06995-.41003-.19-.58002l-9.57996-13.23999c-.76876 1.19512-4.47377 6.75716-5.31 8.06z" fill="#6a9a6a"></path></svg> dodeca</h4>
                             <p>
-                                An incremental static site generator. Zero-reload live updates via
+                                An incremental static site generator with zero-reload live updates via
                                 WASM DOM patching, Sass/SCSS, image processing, font subsetting, and
                                 arborium-powered syntax highlighting.
+                            </p>
+                            <p>
+                                <strong>Nothing to configure—it just works.</strong> Arborium is built in
+                                and automatically highlights all code blocks.
                             </p>
                             <p class="integration-links">
                                 <a href="https://dodeca.bearcove.eu/">Website</a> ·
@@ -412,6 +438,152 @@
                     <p>
                         For the complete reference with examples and CSS styling tips, see the
                         <a href="https://github.com/bearcove/arborium#html-tag-reference">HTML Tag Reference in the README</a>.
+                    </p>
+                </div>
+
+                <div class="about-card" id="size-comparison">
+                    <h3>Grammar Sizes</h3>
+                    <p>
+                        Each grammar includes the full tree-sitter runtime embedded in its WASM module.
+                        This adds a fixed overhead to every grammar bundle, on top of the grammar-specific parser tables.
+                    </p>
+
+                    <!-- Compression format selector -->
+                    <div class="size-format-selector">
+                        <button class="format-btn active" data-format="brotli">
+                            <span class="format-icon"><%- icons["mdi:package-variant-closed"] %></span>
+                            <span class="format-text">
+                                <span class="format-label">Brotli</span>
+                                <span class="format-desc">Best compression</span>
+                            </span>
+                        </button>
+                        <button class="format-btn" data-format="gzip">
+                            <span class="format-icon"><%- icons["mdi:zip-box"] %></span>
+                            <span class="format-text">
+                                <span class="format-label">GZip</span>
+                                <span class="format-desc">Widely supported</span>
+                            </span>
+                        </button>
+                        <button class="format-btn" data-format="uncompressed">
+                            <span class="format-icon"><%- icons["mdi:file-outline"] %></span>
+                            <span class="format-text">
+                                <span class="format-label">Uncompressed</span>
+                                <span class="format-desc">Raw WASM</span>
+                            </span>
+                        </button>
+                    </div>
+
+                    <!-- Size statistics summary -->
+                    <div class="size-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Smallest</span>
+                            <span class="stat-value" id="size-min">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Average</span>
+                            <span class="stat-value" id="size-avg">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Largest</span>
+                            <span class="stat-value" id="size-max">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Total</span>
+                            <span class="stat-value" id="size-total">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Search/filter and sort controls -->
+                    <div class="size-table-controls">
+                        <input
+                            type="text"
+                            id="size-table-search"
+                            placeholder="Filter by language name..."
+                            class="size-search-input"
+                        />
+                        <div class="sort-controls">
+                            <label>Sort:</label>
+                            <button class="sort-btn" data-sort="name">Name</button>
+                            <button class="sort-btn active" data-sort="size">Size</button>
+                        </div>
+                    </div>
+
+                    <!-- The table -->
+                    <div class="size-table-container">
+                        <table class="size-table" id="size-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-language">Language</th>
+                                    <th class="col-c-lines">C Lines</th>
+                                    <th class="col-size">Size</th>
+                                    <th class="col-bar">Distribution</th>
+                                </tr>
+                            </thead>
+                            <tbody id="size-table-body">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="about-card" id="wasm-build">
+                    <h3>WASM Build Pipeline</h3>
+                    <p>
+                        Every grammar is compiled to WASM with aggressive size optimizations. Here's the complete build pipeline:
+                    </p>
+
+                    <h4>1. cargo build</h4>
+                    <p>We compile with nightly Rust using <code>-Zbuild-std</code> to rebuild the standard library with our optimization flags:</p>
+                    <div class="build-flags">
+                        <div class="flag-item">
+                            <code>-Cpanic=immediate-abort</code>
+                            <span>Skip unwinding machinery</span>
+                        </div>
+                        <div class="flag-item">
+                            <code>-Copt-level=s</code>
+                            <span>Optimize for size, not speed</span>
+                        </div>
+                        <div class="flag-item">
+                            <code>-Clto=fat</code>
+                            <span>Full link-time optimization across all crates</span>
+                        </div>
+                        <div class="flag-item">
+                            <code>-Ccodegen-units=1</code>
+                            <span>Single codegen unit for maximum optimization</span>
+                        </div>
+                        <div class="flag-item">
+                            <code>-Cstrip=symbols</code>
+                            <span>Remove debug symbols</span>
+                        </div>
+                    </div>
+
+                    <h4>2. wasm-bindgen</h4>
+                    <p>Generate JavaScript bindings with <code>--target web</code> for ES module output.</p>
+
+                    <h4>3. wasm-opt</h4>
+                    <p>Final size optimization pass with Binaryen's optimizer:</p>
+                    <div class="build-flags">
+                        <div class="flag-item">
+                            <code>-Oz</code>
+                            <span>Aggressive size optimization</span>
+                        </div>
+                        <div class="flag-item">
+                            <code>--enable-bulk-memory</code>
+                            <span>Faster memory operations</span>
+                        </div>
+                        <div class="flag-item">
+                            <code>--enable-mutable-globals</code>
+                            <span>Required for wasm-bindgen</span>
+                        </div>
+                        <div class="flag-item">
+                            <code>--enable-simd</code>
+                            <span>SIMD instructions where applicable</span>
+                        </div>
+                    </div>
+
+                    <p class="build-note">
+                        Despite all these optimizations, WASM bundles are still large because each one embeds the full tree-sitter runtime.
+                        We're exploring ways to share the runtime across grammars, but that's the architecture trade-off for now.
                     </p>
                 </div>
 

@@ -214,6 +214,21 @@ fn generate_plugins_json(
             .map(|s| s.strip_prefix("group-").unwrap_or(s))
             .unwrap_or("unknown");
 
+        // Build path to WASM file in npm output
+        let wasm_path = state
+            .crate_path
+            .parent()
+            .expect("lang directory")
+            .join("npm")
+            .join("grammar_bg.wasm");
+
+        // Calculate WASM sizes (use zeros if file doesn't exist yet)
+        let (size_bytes, size_gzip, size_brotli) =
+            crate::build::calculate_wasm_sizes(&wasm_path).unwrap_or((0, 0, 0));
+
+        // Count C lines in parser
+        let c_lines = crate::build::count_c_lines(&state.crate_path);
+
         entries.push(PluginManifestEntry {
             language: lang_name.to_string(),
             package,
@@ -226,6 +241,10 @@ fn generate_plugins_json(
                 "/langs/group-{}/{}/npm/grammar.core.wasm",
                 group_name, lang_name
             ),
+            size_bytes,
+            size_gzip,
+            size_brotli,
+            c_lines,
         });
     }
 

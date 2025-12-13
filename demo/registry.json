@@ -1438,7 +1438,7 @@
       "link": "https://en.wikipedia.org/wiki/Prolog",
       "trivia": "Prolog (PROgrammation en LOGique) emerged in 1972; used in Japan's Fifth Generation Project (1982). The ISO standard is <a href=\"https://www.iso.org/standard/21413.html\">ISO/IEC 13211-1:1995</a>.",
       "aliases": [
-        "pl"
+        "pro"
       ],
       "grammar_repo": "https://codeberg.org/foxy/tree-sitter-prolog",
       "grammar_license": "MIT",
@@ -1652,7 +1652,8 @@
       "link": "https://en.wikipedia.org/wiki/Scheme_(programming_language)",
       "trivia": "Scheme was created at MIT AI Lab and influenced the design of many languages including JavaScript (which borrowed first-class functions and closures). The language was intentionally small - the original spec fit on 50 pages. Scheme's name comes from 'Schemer', after the AI language Planner, but was shortened due to filename length limits.",
       "aliases": [
-        "scm"
+        "ss",
+        "rkt"
       ],
       "grammar_repo": "https://github.com/6cdh/tree-sitter-scheme",
       "grammar_license": "MIT",
@@ -1958,7 +1959,6 @@
       "trivia": "Announced by Microsoft in Oct 2012 to add optional types to JS; design is documented in the TypeScript spec and Handbook.",
       "aliases": [
         "ts",
-        "tsx",
         "mts",
         "cts"
       ],

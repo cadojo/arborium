@@ -48,7 +48,7 @@ struct ValidateGrammarTemplate<'a> {
 struct CargoTomlTemplate<'a> {
     crate_name: &'a str,
     workspace_version: &'a str,
-    /// Major version for dependencies (e.g., "1" instead of "1.1.5")
+    /// Major version for dependencies
     dep_version: &'a str,
     grammar_id: &'a str,
     grammar_name: &'a str,
@@ -2127,6 +2127,7 @@ fn plan_shared_crates(prepared: &PreparedStructures, mode: PlanMode) -> Result<P
         "arborium-wire",
         "arborium-query",
         "miette-arborium",
+        "arborium-rustdoc",
     ];
 
     for crate_name in shared_crates {
@@ -2142,8 +2143,8 @@ fn plan_shared_crates(prepared: &PreparedStructures, mode: PlanMode) -> Result<P
 }
 
 /// Update a Cargo.toml file's version and all arborium dependency versions.
-/// The package version is set to the full version (e.g., "1.1.11").
-/// Dependency versions are set to just the major version (e.g., "1") for SemVer compatibility.
+/// The package version is set to the full version.
+/// Dependency versions are set to just the major version for SemVer compatibility.
 fn update_cargo_toml_version(
     plan: &mut Plan,
     cargo_toml_path: &Utf8Path,

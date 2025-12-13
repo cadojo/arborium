@@ -5,15 +5,15 @@ export const pluginVersion = "2.0.0";
 
 /** All available languages */
 export const availableLanguages: string[] = [
-  "ada",
-  "glsl",
-  "hlsl",
-  "julia",
-  "matlab",
-  "prolog",
-  "r",
-  "sparql",
-  "tlaplus",
-  "verilog",
-  "vhdl",
+  "agda",
+  "commonlisp",
+  "elixir",
+  "elm",
+  "erlang",
+  "gleam",
+  "haskell",
+  "idris",
+  "lean",
+  "ocaml",
+  "scheme",
 ];

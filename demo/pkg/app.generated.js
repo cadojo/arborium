@@ -861,7 +861,7 @@ const languageInfo = {
         "year": 1972,
         "url": "https://en.wikipedia.org/wiki/Prolog",
         "trivia": "Prolog (PROgrammation en LOGique) emerged in 1972; used in Japan's Fifth Generation Project (1982). The ISO standard is <a href=\"https://www.iso.org/standard/21413.html\">ISO/IEC 13211-1:1995</a>.",
-        "aliases": ["pl"],
+        "aliases": ["pro"],
         "grammarRepo": "https://codeberg.org/foxy/tree-sitter-prolog",
         "grammarLicense": "MIT"
     },
@@ -985,7 +985,7 @@ const languageInfo = {
         "year": 1975,
         "url": "https://en.wikipedia.org/wiki/Scheme_(programming_language)",
         "trivia": "Scheme was created at MIT AI Lab and influenced the design of many languages including JavaScript (which borrowed first-class functions and closures). The language was intentionally small - the original spec fit on 50 pages. Scheme's name comes from 'Schemer', after the AI language Planner, but was shortened due to filename length limits.",
-        "aliases": ["scm"],
+        "aliases": ["ss", "rkt"],
         "grammarRepo": "https://github.com/6cdh/tree-sitter-scheme",
         "grammarLicense": "MIT"
     },
@@ -1161,7 +1161,7 @@ const languageInfo = {
         "year": 2012,
         "url": "https://en.wikipedia.org/wiki/TypeScript",
         "trivia": "Announced by Microsoft in Oct 2012 to add optional types to JS; design is documented in the TypeScript spec and Handbook.",
-        "aliases": ["ts", "tsx", "mts", "cts"],
+        "aliases": ["ts", "mts", "cts"],
         "grammarRepo": "https://github.com/tree-sitter/tree-sitter-typescript",
         "grammarLicense": "MIT"
     },
@@ -1491,7 +1491,6 @@ const icons = {
     "devicon-plain:xml": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 128 128\"><path fill=\"currentColor\" d=\"M23.25 37.459c-2.661.114-2.363 3.885-2.875 5.797c-.837 3.125-1.608 7.1-1.853 10.324c-.246 3.138-.044 6.046.353 9.219c.309 2.467 1.02 4.104.373 4.767c-.52.623-17.199 15.92-18.543 16.786c-1.392.903-.428 3.13.37 4.379c.841 1.317 1.24 1.999 2.99 1.765c1.645-.222 2.167-2.182 3.127-3.248c1.146-1.353 12.917-12.824 13.957-12.824l-.026-.147c.421 2.923 1.972 5.705 3.598 8.112c.798 1.19 1.68 2.352 2.699 3.37c.936.937 2.145 1.702 3.145 2.409c2.352.123 4.246-1.618 1.875-3.59c-.905-.757-3.935-5.212-4.961-7.676c-.957-2.303-3.074-5.762-.782-7.654c7.921-6.6 19.887-12.132 22.711-12.406c-1.377 5.422-7.257 16.32-9.408 21.48c-.741 1.785-1.233 3.92-.982 5.864c.297 2.324 2.046 4.152 3.144 4.326c2.229-.127 3.74-2.086 5.06-3.463c1.832-1.908 3.396-3.672 5.221-5.588c1.812-1.907 3.593-3.918 5.2-5.734c.988-1.12 3.6-3.829 5.152-3.829c-.584 3.732-3.832 8.33-4.486 12.094c-.667 3.85 2.844 8.563 6.52 5.131c3.336-3.117 6.72-6.056 10-9.22c1.162-1.112.935.2 1.196 1.296c.263 1.114.945 4.875 1.473 5.89c.968 1.857 2.653 3.176 4.799 3.212c1.951.032 3.897-.862 5.258-2.219c1.015-1.011 2.757-3.749.83-4.463c-1.23-.456-1.159-.943-2.65-.693c-.925.158-1.94.395-2.717.959c-1.967-.008-2.042-4.756-1.737-6.215c.36-1.741 1.107-3.522.992-5.34c-.135-2.24-2.554-3.707-3.115-3.865c-.832-.41-1.343.117-2.447 1.133c-.928.857-1.947 1.778-2.863 2.646c-1.829 1.733-4.11 4.36-5.041 4.36c1.634-3.73 3.8-14.16-3.442-13.24c-3.01.384-5.085 2.02-7.457 3.806a253 253 0 0 1-5.014 4.674c-1.269 1.146-1.99 2.152-2.654 2.152c.707-3.962 9.02-16.976 4.74-20.644c-.858-.722-1.678-1.742-2.761-1.864c-1.511.186-3.002.552-4.457 1.016c-3.023 1.043-14.846 6.9-22.399 12.306c-.701.508-1.15-.451-1.236-1.558c-.472-5.732 1.06-11.749 2.654-17.1c1.103-3.732-2.992-6.563-3.531-6.693m96.842 4.877c-.889 1.952-1.067 4.788-1.332 7.06v.008c-2.02-.238-4.646-.495-6.668-.617c1.273 1.586 3.698 3.149 5.658 3.88c-.261 1.958-2.326 3.584-3.207 5.476c2.448-.679 3.62-2.514 5.291-4.403c1.935 1.178 4.227 3.363 6.742 3.41c-.952-2.022-1.792-3.723-3.525-5.183c1.44-.94 3.842-1.927 4.949-3.387c-1.844-.396-3.832-.5-5.629-.08c-1.38-1.523-1.605-4.141-2.28-6.164zm-14.733.387c-1.233.113-3.28 2.633-4.453 4.144c-4.323 5.564-8.265 16.89-8.9 18.977c-1.935 6.398-2.686 14.285 1.502 19.916c2.436 3.284 6.728 3.532 10.935 2.324c2.17-.624 4.344-2.181 5.086-3.875c.615-1.411.932-4.037-2.166-2.035c-1.198.773-3.395 1.627-7.334 1.564c-1.32-.024-3.49-1.92-4.072-3.88c-1.024-3.194-.588-7.458-.588-7.458c.892-5.505 3.447-11.47 5.688-16.474c.869-1.932 3.517-6.748 4.51-8.283c0 .004 1.27-1.997.7-4.123l-.01.017c-.167-.624-.487-.852-.898-.814m16.45 15.935c-.647 1.417-.774 3.483-.965 5.133h-.01c-1.464-.17-3.38-.358-4.836-.45c.924 1.152 2.686 2.285 4.106 2.817c-.18 1.416-1.682 2.606-2.325 3.975c1.781-.493 2.639-1.829 3.844-3.194c1.404.845 3.074 2.436 4.899 2.471c-.679-1.471-1.294-2.709-2.555-3.764c1.039-.678 2.78-1.408 3.582-2.459c-1.333-.289-2.789-.36-4.082-.056c-1.003-1.107-1.167-3-1.658-4.473m-6.55 12.95c-.443.98-.533 2.4-.665 3.546l-.012-.004a62 62 0 0 0-3.344-.308c.635.8 1.853 1.58 2.836 1.949c-.127.98-1.16 1.794-1.605 2.742c1.23-.345 1.82-1.264 2.658-2.213c.979.595 2.125 1.689 3.387 1.713c-.472-1.015-.894-1.863-1.762-2.598c.717-.472 1.92-.972 2.479-1.7c-.927-.2-1.927-.252-2.823-.042c-.694-.761-.811-2.07-1.148-3.086z\"/></svg>",
     "devicon-plain:yaml": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 128 128\"><path fill=\"currentColor\" d=\"m.5 5.629l21.754 34.15v21.646h13.959V39.779l22.775-34.15h-15.02L30.021 27.617L16.189 5.629zm63.994.13l-23.66 55.798h11.189l5.139-12.408h25.266l4.252 12.408h11.957L75.937 5.76zm5.992 11.774l7.744 20.475H61.843zm16.195 50.139v54.45H127.5v-11.636H98.636V67.672zm-64.428.011v54.687h11.734V84.647l12.28 25.355H55.5l12.7-26.246v38.602h11.256V67.682h-15.37L50.45 92.414L37.464 67.682z\"/></svg>",
     "mdi:account": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M12 4a4 4 0 0 1 4 4a4 4 0 0 1-4 4a4 4 0 0 1-4-4a4 4 0 0 1 4-4m0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4\"/></svg>",
-    "mdi:alert-circle-outline": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M11 15h2v2h-2zm0-8h2v6h-2zm1-5C6.47 2 2 6.5 2 12a10 10 0 0 0 10 10a10 10 0 0 0 10-10A10 10 0 0 0 12 2m0 18a8 8 0 0 1-8-8a8 8 0 0 1 8-8a8 8 0 0 1 8 8a8 8 0 0 1-8 8\"/></svg>",
     "mdi:alpha-a-box-outline": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zm2 0v14h14V5zm6 2h2a2 2 0 0 1 2 2v8h-2v-4h-2v4H9V9a2 2 0 0 1 2-2m0 2v2h2V9z\"/></svg>",
     "mdi:alpha-d-box-outline": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M9 7h4a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H9zm2 2v6h2V9zM3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zm2 0v14h14V5z\"/></svg>",
     "mdi:alpha-i-box-outline": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M14 7v2h-1v6h1v2h-4v-2h1V9h-1V7zM5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2m0 2v14h14V5z\"/></svg>",
@@ -1500,6 +1499,7 @@ const icons = {
     "mdi:apple": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47c-1.34.03-1.77-.79-3.29-.79c-1.53 0-2 .77-3.27.82c-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51c1.28-.02 2.5.87 3.29.87c.78 0 2.26-1.07 3.81-.91c.65.03 2.47.26 3.64 1.98c-.09.06-2.17 1.28-2.15 3.81c.03 3.02 2.65 4.03 2.68 4.04c-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5c.13 1.17-.34 2.35-1.04 3.19c-.69.85-1.83 1.51-2.95 1.42c-.15-1.15.41-2.35 1.05-3.11\"/></svg>",
     "mdi:book-open-page-variant": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"m19 2l-5 4.5v11l5-4.5zM6.5 5C4.55 5 2.45 5.4 1 6.5v14.66c0 .25.25.5.5.5c.1 0 .15-.07.25-.07c1.35-.65 3.3-1.09 4.75-1.09c1.95 0 4.05.4 5.5 1.5c1.35-.85 3.8-1.5 5.5-1.5c1.65 0 3.35.31 4.75 1.06c.1.05.15.03.25.03c.25 0 .5-.25.5-.5V6.5c-.6-.45-1.25-.75-2-1V19c-1.1-.35-2.3-.5-3.5-.5c-1.7 0-4.15.65-5.5 1.5V6.5C10.55 5.4 8.45 5 6.5 5\"/></svg>",
     "mdi:calendar": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M19 19H5V8h14m-3-7v2H8V1H6v2H5c-1.11 0-2 .89-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-1V1m-1 11h-5v5h5z\"/></svg>",
+    "mdi:cat": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"m12 8l-1.33.09C9.81 7.07 7.4 4.5 5 4.5c0 0-1.97 2.96-.04 6.91c-.55.83-.89 1.26-.96 2.25l-1.93.29l.21.98l1.76-.26l.14.71l-1.57.94l.47.89l1.45-.89C5.68 18.76 8.59 20 12 20s6.32-1.24 7.47-3.68l1.45.89l.47-.89l-1.57-.94l.14-.71l1.76.26l.21-.98l-1.93-.29c-.07-.99-.41-1.42-.96-2.25C20.97 7.46 19 4.5 19 4.5c-2.4 0-4.81 2.57-5.67 3.59zm-3 3a1 1 0 0 1 1 1a1 1 0 0 1-1 1a1 1 0 0 1-1-1a1 1 0 0 1 1-1m6 0a1 1 0 0 1 1 1a1 1 0 0 1-1 1a1 1 0 0 1-1-1a1 1 0 0 1 1-1m-4 3h2l-.7 1.39c.2.64.76 1.11 1.45 1.11a1.5 1.5 0 0 0 1.5-1.5h.5a2 2 0 0 1-2 2c-.75 0-1.4-.41-1.75-1c-.35.59-1 1-1.75 1a2 2 0 0 1-2-2h.5a1.5 1.5 0 0 0 1.5 1.5c.69 0 1.25-.47 1.45-1.11z\"/></svg>",
     "mdi:check-circle": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10s10-4.5 10-10S17.5 2 12 2m-2 15l-5-5l1.41-1.41L10 14.17l7.59-7.59L19 8z\"/></svg>",
     "mdi:chevron-down": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6l-6-6z\"/></svg>",
     "mdi:chip": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M6 4h12v1h3v2h-3v2h3v2h-3v2h3v2h-3v2h3v2h-3v1H6v-1H3v-2h3v-2H3v-2h3v-2H3V9h3V7H3V5h3zm5 11v3h1v-3zm2 0v3h1v-3zm2 0v3h1v-3z\"/></svg>",
@@ -1512,6 +1512,7 @@ const icons = {
     "mdi:database-outline": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M12 3C7.58 3 4 4.79 4 7v10c0 2.21 3.59 4 8 4s8-1.79 8-4V7c0-2.21-3.58-4-8-4m6 14c0 .5-2.13 2-6 2s-6-1.5-6-2v-2.23c1.61.78 3.72 1.23 6 1.23s4.39-.45 6-1.23zm0-4.55c-1.3.95-3.58 1.55-6 1.55s-4.7-.6-6-1.55V9.64c1.47.83 3.61 1.36 6 1.36s4.53-.53 6-1.36zM12 9C8.13 9 6 7.5 6 7s2.13-2 6-2s6 1.5 6 2s-2.13 2-6 2\"/></svg>",
     "mdi:file-compare": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M10 18H6v-2h4zm0-4H6v-2h4zm0-13v1H6c-1.11 0-2 .89-2 2v16a2 2 0 0 0 2 2h4v1h2V1zm10 7v12c0 1.11-.89 2-2 2h-4v-2h4v-9h-4V9h4.5L14 4.5V2zm-4 6h-2v-2h2zm0 4h-2v-2h2z\"/></svg>",
     "mdi:file-document-outline": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm0 2h7v5h5v11H6zm2 8v2h8v-2zm0 4v2h5v-2z\"/></svg>",
+    "mdi:file-outline": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm4 18H6V4h7v5h5z\"/></svg>",
     "mdi:file-tree": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M3 3h6v4H3zm12 7h6v4h-6zm0 7h6v4h-6zm-2-4H7v5h6v2H5V9h2v2h6z\"/></svg>",
     "mdi:file-tree-outline": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M12 13H7v5h5v2H5V10h2v1h5zM8 4v2H4V4zm2-2H2v6h8zm10 9v2h-4v-2zm2-2h-8v6h8zm-2 9v2h-4v-2zm2-2h-8v6h8z\"/></svg>",
     "mdi:fish": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"m12 20l.76-3c-3.26-.21-6.17-1.6-7.01-3.42c-.09.48-.22.92-.42 1.25C4.67 16 3.33 16 2 16c1.1 0 1.5-1.57 1.5-3.5S3.1 9 2 9c1.33 0 2.67 0 3.33 1.17c.2.33.33.77.42 1.25c.65-1.42 2.57-2.57 4.91-3.1L9 5c2 0 4 0 5.33.67c1.13.56 1.78 1.6 2.36 2.71c2.92.7 5.31 2.28 5.31 4.12c0 1.88-2.5 3.5-5.5 4.16c-.83 1.1-1.64 2.12-2.33 2.67c-.84.67-1.5.67-2.17.67m5-9a1 1 0 0 0-1 1a1 1 0 0 0 1 1a1 1 0 0 0 1-1a1 1 0 0 0-1-1\"/></svg>",
@@ -1521,8 +1522,11 @@ const icons = {
     "mdi:graph-outline": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M19.5 17c-.14 0-.26 0-.39.04L17.5 13.8c.45-.45.75-1.09.75-1.8a2.5 2.5 0 0 0-2.5-2.5c-.14 0-.25 0-.4.04L13.74 6.3c.47-.46.76-1.09.76-1.8a2.5 2.5 0 0 0-5 0c0 .7.29 1.34.76 1.79L8.65 9.54c-.15-.04-.26-.04-.4-.04a2.5 2.5 0 0 0-2.5 2.5c0 .71.29 1.34.75 1.79l-1.61 3.25C4.76 17 4.64 17 4.5 17a2.5 2.5 0 0 0 0 5A2.5 2.5 0 0 0 7 19.5c0-.7-.29-1.34-.76-1.79l1.62-3.25c.14.04.26.04.39.04s.25 0 .38-.04l1.63 3.25c-.47.45-.76 1.09-.76 1.79a2.5 2.5 0 0 0 5 0A2.5 2.5 0 0 0 12 17c-.13 0-.26 0-.39.04L10 13.8c.45-.45.75-1.09.75-1.8c0-.7-.29-1.33-.75-1.79l1.61-3.25c.13.04.26.04.39.04s.26 0 .39-.04L14 10.21a2.5 2.5 0 0 0 1.75 4.29c.13 0 .25 0 .38-.04l1.63 3.25c-.47.45-.76 1.09-.76 1.79a2.5 2.5 0 0 0 5 0a2.5 2.5 0 0 0-2.5-2.5m-15 3.5c-.55 0-1-.45-1-1s.45-1 1-1s1 .45 1 1s-.45 1-1 1m8.5-1c0 .55-.45 1-1 1s-1-.45-1-1s.45-1 1-1s1 .45 1 1M7.25 12c0-.55.45-1 1-1s1 .45 1 1s-.45 1-1 1s-1-.45-1-1M11 4.5c0-.55.45-1 1-1s1 .45 1 1s-.45 1-1 1s-1-.45-1-1m3.75 7.5c0-.55.45-1 1-1s1 .45 1 1s-.45 1-1 1s-1-.45-1-1m4.75 8.5c-.55 0-1-.45-1-1s.45-1 1-1s1 .45 1 1s-.45 1-1 1\"/></svg>",
     "mdi:hammer-wrench": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"m13.78 15.3l6 6l2.11-2.16l-6-6zm3.72-5.2c-.39 0-.81-.05-1.14-.19L4.97 21.25l-2.11-2.11l7.41-7.4L8.5 9.96l-.72.7l-1.45-1.41v2.86l-.7.7l-3.52-3.56l.7-.7h2.81l-1.4-1.41l3.56-3.56a2.976 2.976 0 0 1 4.22 0L9.89 5.74l1.41 1.4l-.71.71l1.79 1.78l1.82-1.88c-.14-.33-.2-.75-.2-1.12a3.49 3.49 0 0 1 3.5-3.52c.59 0 1.11.14 1.58.42L16.41 6.2l1.5 1.5l2.67-2.67c.28.47.42.97.42 1.6c0 1.92-1.55 3.47-3.5 3.47\"/></svg>",
     "mdi:head-question": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M13 3C9.23 3 6.19 5.95 6 9.66l-1.92 2.53c-.24.31 0 .81.42.81H6v3c0 1.11.89 2 2 2h1v3h7v-4.69c2.37-1.12 4-3.51 4-6.31c0-3.86-3.12-7-7-7m1 11h-2v-2h2zm1.75-5.19c-.29.4-.66.69-1.11.93c-.25.16-.42.33-.51.52c-.09.18-.13.43-.13.74h-2c0-.5.11-.92.31-1.18c.19-.27.54-.57 1.05-.91c.26-.16.47-.36.61-.59c.16-.23.23-.5.23-.82c0-.3-.08-.56-.26-.75c-.18-.18-.44-.28-.75-.28a1 1 0 0 0-.66.23c-.18.16-.27.39-.28.69h-1.93l-.01-.03c-.01-.79.25-1.36.77-1.77c.54-.39 1.24-.59 2.11-.59c.93 0 1.66.23 2.19.68c.54.45.81 1.06.81 1.82c0 .5-.15.91-.44 1.31\"/></svg>",
+    "mdi:heart": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"m12 21.35l-1.45-1.32C5.4 15.36 2 12.27 2 8.5C2 5.41 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.08C13.09 3.81 14.76 3 16.5 3C19.58 3 22 5.41 22 8.5c0 3.77-3.4 6.86-8.55 11.53z\"/></svg>",
     "mdi:key-chain": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08c-.59.2-1.03.76-1.03 1.42c0 .83.67 1.5 1.5 1.5c.23 0 .45-.06.65-.15c.64.84 1.52 1.47 2.52 1.82m8.06 5.77l-2.76 1.16l-.78-1.84l-2.76 1.17l-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75c-.96-2.29.12-4.93 2.41-5.9c.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2C7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57c.42.43 1.05.56 1.63.31c.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81c1.28.36 2.38 1.25 2.93 2.57c.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42c-.54.27-.85.82-.82 1.42\"/></svg>",
     "mdi:lambda": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"m6 20l4.16-12.09L9.34 6H8V4h2c.42 0 .78.26.93.63L16.66 18H18v2h-2c-.43 0-.79-.27-.93-.64l-3.74-8.71L8.12 20z\"/></svg>",
+    "mdi:language-html5": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"m12 17.56l4.07-1.13l.55-6.1H9.38L9.2 8.3h7.6l.2-1.99H7l.56 6.01h6.89l-.23 2.58l-2.22.6l-2.22-.6l-.14-1.66h-2l.29 3.19zM4.07 3h15.86L18.5 19.2L12 21l-6.5-1.8z\"/></svg>",
+    "mdi:lightning-bolt": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M11 15H6l7-14v8h5l-7 14z\"/></svg>",
     "mdi:linux": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M14.62 8.35c-.42.28-1.75 1.04-1.95 1.19c-.39.31-.75.29-1.14-.01c-.2-.16-1.53-.92-1.95-1.19c-.48-.31-.45-.7.08-.92c1.64-.69 3.28-.64 4.91.03c.49.21.51.6.05.9m7.22 7.28c-.93-2.09-2.2-3.99-3.84-5.66a4.3 4.3 0 0 1-1.06-1.88c-.1-.33-.17-.67-.24-1.01c-.2-.88-.29-1.78-.7-2.61c-.73-1.58-2-2.4-3.84-2.47c-1.81.05-3.16.81-3.95 2.4c-.21.43-.36.88-.46 1.34c-.17.76-.32 1.55-.5 2.32c-.15.65-.45 1.21-.96 1.71c-1.61 1.57-2.9 3.37-3.88 5.35c-.14.29-.28.58-.37.88c-.19.66.29 1.12.99.96c.44-.09.88-.18 1.3-.31c.41-.15.57-.05.67.35c.65 2.15 2.07 3.66 4.24 4.5c4.12 1.56 8.93-.66 9.97-4.58c.07-.27.17-.37.47-.27c.46.14.93.24 1.4.35c.49.09.85-.16.92-.64c.03-.26-.06-.49-.16-.73\"/></svg>",
     "mdi:math-integral": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M11.5 19.1c-.2 1.1-.6 1.9-1.3 2.4s-1.6.6-2.7.4c-.4-.1-1.2-.2-1.5-.4l.5-1.5c.3.1.9.3 1.2.3c1.1.2 1.7-.3 1.9-1.5L12 5.2c.2-1.2.7-2 1.4-2.6c.7-.5 1.7-.7 2.8-.5c.4.1 1.2.2 1.8.5L17.5 4c-.2-.1-.9-.2-1.2-.3c-1.3-.2-2 .4-2.3 1.9z\"/></svg>",
     "mdi:memory": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M17 17H7V7h10m4 4V9h-2V7a2 2 0 0 0-2-2h-2V3h-2v2h-2V3H9v2H7c-1.11 0-2 .89-2 2v2H3v2h2v2H3v2h2v2a2 2 0 0 0 2 2h2v2h2v-2h2v2h2v-2h2a2 2 0 0 0 2-2v-2h2v-2h-2v-2m-6 2h-2v-2h2m2-2H9v6h6z\"/></svg>",
@@ -1530,6 +1534,8 @@ const icons = {
     "mdi:message-outline": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m0 14H5.2L4 17.2V4h16z\"/></svg>",
     "mdi:microsoft-windows": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M3 12V6.75l6-1.32v6.48zm17-9v8.75l-10 .15V5.21zM3 13l6 .09v6.81l-6-1.15zm17 .25V22l-10-1.91V13.1z\"/></svg>",
     "mdi:ninja": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M7.75 13c-.01-.35.15-.69.42-.92c.75.16 1.45.47 2.08.92c0 .68-.56 1.24-1.25 1.24S7.76 13.69 7.75 13m6 0c.63-.44 1.33-.75 2.08-.91c.27.23.43.57.42.91c0 .7-.56 1.26-1.25 1.26s-1.25-.56-1.25-1.26M12 9c-2.77-.04-5.5.65-7.93 2L4 12c0 1.23.29 2.44.84 3.54a47.6 47.6 0 0 1 14.32 0c.55-1.1.84-2.31.84-3.54l-.07-1A15.85 15.85 0 0 0 12 9m0-7a10 10 0 0 1 10 10a10 10 0 0 1-10 10A10 10 0 0 1 2 12A10 10 0 0 1 12 2\"/></svg>",
+    "mdi:nodejs": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M12 1.85c-.27 0-.55.07-.78.2l-7.44 4.3c-.48.28-.78.8-.78 1.36v8.58c0 .56.3 1.08.78 1.36l1.95 1.12c.95.46 1.27.47 1.71.47c1.4 0 2.21-.85 2.21-2.33V8.44c0-.12-.1-.22-.22-.22H8.5c-.13 0-.23.1-.23.22v8.47c0 .66-.68 1.31-1.77.76L4.45 16.5a.26.26 0 0 1-.11-.21V7.71c0-.09.04-.17.11-.21l7.44-4.29c.06-.04.16-.04.22 0l7.44 4.29c.07.04.11.12.11.21v8.58c0 .08-.04.16-.11.21l-7.44 4.29c-.06.04-.16.04-.23 0L10 19.65c-.08-.03-.16-.04-.21-.01c-.53.3-.63.36-1.12.51c-.12.04-.31.11.07.32l2.48 1.47q.36.21.78.21t.78-.21l7.44-4.29c.48-.28.78-.8.78-1.36V7.71c0-.56-.3-1.08-.78-1.36l-7.44-4.3c-.23-.13-.5-.2-.78-.2M14 8c-2.12 0-3.39.89-3.39 2.39c0 1.61 1.26 2.08 3.3 2.28c2.43.24 2.62.6 2.62 1.08c0 .83-.67 1.18-2.23 1.18c-1.98 0-2.4-.49-2.55-1.47a.226.226 0 0 0-.22-.18h-.96c-.12 0-.21.09-.21.22c0 1.24.68 2.74 3.94 2.74c2.35 0 3.7-.93 3.7-2.55c0-1.61-1.08-2.03-3.37-2.34c-2.31-.3-2.54-.46-2.54-1c0-.45.2-1.05 1.91-1.05c1.5 0 2.09.33 2.32 1.36c.02.1.11.17.21.17h.97c.05 0 .11-.02.15-.07c.04-.04.07-.1.05-.16C17.56 8.82 16.38 8 14 8\"/></svg>",
+    "mdi:package-variant-closed": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18s-.41-.06-.57-.18l-7.9-4.44A.99.99 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18s.41.06.57.18l7.9 4.44c.32.17.53.5.53.88zM12 4.15l-1.89 1.07L16 8.61l1.96-1.11zM6.04 7.5L12 10.85l1.96-1.1l-5.88-3.4zM5 15.91l6 3.38v-6.71L5 9.21zm14 0v-6.7l-6 3.37v6.71z\"/></svg>",
     "mdi:palette": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M17.5 12a1.5 1.5 0 0 1-1.5-1.5A1.5 1.5 0 0 1 17.5 9a1.5 1.5 0 0 1 1.5 1.5a1.5 1.5 0 0 1-1.5 1.5m-3-4A1.5 1.5 0 0 1 13 6.5A1.5 1.5 0 0 1 14.5 5A1.5 1.5 0 0 1 16 6.5A1.5 1.5 0 0 1 14.5 8m-5 0A1.5 1.5 0 0 1 8 6.5A1.5 1.5 0 0 1 9.5 5A1.5 1.5 0 0 1 11 6.5A1.5 1.5 0 0 1 9.5 8m-3 4A1.5 1.5 0 0 1 5 10.5A1.5 1.5 0 0 1 6.5 9A1.5 1.5 0 0 1 8 10.5A1.5 1.5 0 0 1 6.5 12M12 3a9 9 0 0 0-9 9a9 9 0 0 0 9 9a1.5 1.5 0 0 0 1.5-1.5c0-.39-.15-.74-.39-1c-.23-.27-.38-.62-.38-1a1.5 1.5 0 0 1 1.5-1.5H16a5 5 0 0 0 5-5c0-4.42-4.03-8-9-8\"/></svg>",
     "mdi:plus-circle-outline": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M12 20c-4.41 0-8-3.59-8-8s3.59-8 8-8s8 3.59 8 8s-3.59 8-8 8m0-18A10 10 0 0 0 2 12a10 10 0 0 0 10 10a10 10 0 0 0 10-10A10 10 0 0 0 12 2m1 5h-2v4H7v2h4v4h2v-4h4v-2h-4z\"/></svg>",
     "mdi:printer": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M18 3H6v4h12m1 5a1 1 0 0 1-1-1a1 1 0 0 1 1-1a1 1 0 0 1 1 1a1 1 0 0 1-1 1m-3 7H8v-5h8m3-6H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3\"/></svg>",
@@ -1544,6 +1550,7 @@ const icons = {
     "mdi:weather-sunny": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M12 7a5 5 0 0 1 5 5a5 5 0 0 1-5 5a5 5 0 0 1-5-5a5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3a3 3 0 0 0 3 3a3 3 0 0 0 3-3a3 3 0 0 0-3-3m0-7l2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10l1.76-3.77a7.13 7.13 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10l-4.14.36c.59-.51 1.12-1.14 1.54-1.86c.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44c.82 0 1.63-.17 2.37-.44z\"/></svg>",
     "mdi:weight": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M12 3a4 4 0 0 1 4 4c0 .73-.19 1.41-.54 2H18c.95 0 1.75.67 1.95 1.56C21.96 18.57 22 18.78 22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2c0-.22.04-.43 2.05-8.44C4.25 9.67 5.05 9 6 9h2.54A3.9 3.9 0 0 1 8 7a4 4 0 0 1 4-4m0 2a2 2 0 0 0-2 2a2 2 0 0 0 2 2a2 2 0 0 0 2-2a2 2 0 0 0-2-2\"/></svg>",
     "mdi:wikipedia": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"m14.97 18.95l-2.56-6.03c-1.02 1.99-2.14 4.08-3.1 6.03c-.01.01-.47 0-.47 0C7.37 15.5 5.85 12.1 4.37 8.68C4.03 7.84 2.83 6.5 2 6.5v-.45h5.06v.45c-.6 0-1.62.4-1.36 1.05c.72 1.54 3.24 7.51 3.93 9.03c.47-.94 1.8-3.42 2.37-4.47c-.45-.88-1.87-4.18-2.29-5c-.32-.54-1.13-.61-1.75-.61c0-.15.01-.25 0-.44l4.46.01v.4c-.61.03-1.18.24-.92.82c.6 1.24.95 2.13 1.5 3.28c.17-.34 1.07-2.19 1.5-3.16c.26-.65-.13-.91-1.21-.91c.01-.12.01-.33.01-.43c1.39-.01 3.48-.01 3.85-.02v.42c-.71.03-1.44.41-1.82.99L13.5 11.3c.18.51 1.96 4.46 2.15 4.9l3.85-8.83c-.3-.72-1.16-.87-1.5-.87v-.45l4 .03v.42c-.88 0-1.43.5-1.75 1.25c-.8 1.79-3.25 7.49-4.85 11.2z\"/></svg>",
+    "mdi:zip-box": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M14 17h-2v-2h-2v-2h2v2h2m0-6h-2v2h2v2h-2v-2h-2V9h2V7h-2V5h2v2h2m5-4H5c-1.11 0-2 .89-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2\"/></svg>",
     "simple-icons:caddy": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M11.094.47c-.842 0-1.696.092-2.552.288a11.4 11.4 0 0 0-4.87 2.423a10.6 10.6 0 0 0-2.36 2.826A10 10 0 0 0 .305 8.582c-.398 1.62-.4 3.336-.043 5.048c.085.405.183.809.31 1.212a11.9 11.9 0 0 0 1.662 3.729a3 3 0 0 0-.086.427a3.323 3.323 0 0 0 2.848 3.71a3.3 3.3 0 0 0 1.947-.346c1.045.51 2.17.864 3.339 1.04a11.7 11.7 0 0 0 4.285-.155a11.6 11.6 0 0 0 4.936-2.485a10.6 10.6 0 0 0 2.352-2.894a11.2 11.2 0 0 0 1.356-4.424a11.2 11.2 0 0 0-.498-4.335q.263-.116.486-.293h.001c.402-.322.693-.794.777-1.342a2.146 2.146 0 0 0-1.79-2.434a2.1 2.1 0 0 0-1.205.171q-.059-.064-.113-.13a11.7 11.7 0 0 0-3.476-2.93a13 13 0 0 0-1.76-.81a13.6 13.6 0 0 0-2.06-.613a12 12 0 0 0-2.48-.258Zm.714.328a10 10 0 0 1 1.028.042a9.9 9.9 0 0 1 2.743.639c.984.39 1.89.958 2.707 1.632a10.8 10.8 0 0 1 2.091 2.328q.038.06.07.12a2.12 2.12 0 0 0-.435 2.646c-.158.114-.97.692-1.634 1.183c-.414.308-.733.557-.733.557l.581.68s.296-.276.665-.638c.572-.562 1.229-1.233 1.395-1.403a2.12 2.12 0 0 0 1.907.677a11.2 11.2 0 0 1-.013 4.046a11.4 11.4 0 0 1-1.475 3.897a12.3 12.3 0 0 1-2.079 2.587c-1.19 1.125-2.633 2.022-4.306 2.531a10.8 10.8 0 0 1-3.973.484a11 11 0 0 1-3.057-.652a3.3 3.3 0 0 0 1.417-2.294a3.3 3.3 0 0 0-.294-1.842c.18-.162.403-.363.656-.6c1.015-.955 2.353-2.303 2.353-2.303l-.47-.599s-1.63.972-2.801 1.728c-.307.198-.573.378-.777.517a3.3 3.3 0 0 0-1.516-.611a3.33 3.33 0 0 0-3.487 2.017a10 10 0 0 1-.695-1.078A11 11 0 0 1 .728 14.8a10 10 0 0 1-.2-1.212c-.164-1.653.103-3.258.629-4.754a13 13 0 0 1 1.087-2.288c.57-.968 1.248-1.872 2.069-2.656A11 11 0 0 1 11.808.797Zm-.147 3.257a3.84 3.84 0 0 0-3.82 3.82v2.36h-.94c-.751 0-1.377.625-1.377 1.377v3.8h1.46v-3.718h9.354v6.264H10.02v1.46h6.4c.751 0 1.377-.625 1.377-1.377v-6.43a1.39 1.39 0 0 0-1.377-1.377h-.94v-2.36a3.84 3.84 0 0 0-3.82-3.819zm0 1.46a2.37 2.37 0 0 1 2.36 2.36v2.36H9.3v-2.36a2.37 2.37 0 0 1 2.36-2.36zm10.141.392a1.253 1.253 0 0 1 1.296 1.434a1.24 1.24 0 0 1-.453.78c-.266.213-.61.318-.968.264a1.253 1.253 0 0 1-1.045-1.42a1.255 1.255 0 0 1 1.17-1.058M5.384 17.425a2.02 2.02 0 0 1 1.917 1.298c.116.3.159.628.114.967a2.015 2.015 0 0 1-2.249 1.728a2.016 2.016 0 0 1-1.727-2.25a2.02 2.02 0 0 1 1.945-1.743\"/></svg>",
     "simple-icons:clojure": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M11.503 12.216c-.119.259-.251.549-.387.858c-.482 1.092-1.016 2.42-1.21 3.271a5 5 0 0 0-.112 1.096q.001.247.022.514c.682.25 1.417.388 2.186.39a6.4 6.4 0 0 0 2.001-.326a4 4 0 0 1-.418-.441c-.854-1.089-1.329-2.682-2.082-5.362M8.355 6.813A6.35 6.35 0 0 0 5.657 12a6.35 6.35 0 0 0 2.625 5.134c.39-1.622 1.366-3.107 2.83-6.084q-.13-.36-.297-.775c-.406-1.018-.991-2.198-1.513-2.733a4.3 4.3 0 0 0-.947-.729m9.172 12.464c-.84-.105-1.533-.232-2.141-.446A7.625 7.625 0 0 1 4.376 12a7.6 7.6 0 0 1 2.6-5.73a5.6 5.6 0 0 0-1.324-.162c-2.236.02-4.597 1.258-5.58 4.602c-.092.486-.07.854-.07 1.29c0 6.627 5.373 12 12 12c4.059 0 7.643-2.017 9.815-5.101c-1.174.293-2.305.433-3.271.436q-.543 0-1.019-.058m-2.254-2.325c.074.036.242.097.475.163a6.35 6.35 0 0 0 2.6-5.115h-.002a6.354 6.354 0 0 0-6.345-6.345a6.3 6.3 0 0 0-1.992.324c1.289 1.468 1.908 3.566 2.507 5.862l.001.003c.001.002.192.637.518 1.48c.326.842.789 1.885 1.293 2.645c.332.51.697.876.945.983M12.001 0a11.98 11.98 0 0 0-9.752 5.013c1.134-.71 2.291-.967 3.301-.957c1.394.004 2.491.436 3.017.732q.19.11.366.233A7.625 7.625 0 0 1 19.625 12a7.6 7.6 0 0 1-2.268 5.425c.344.038.709.063 1.084.061c1.328 0 2.766-.293 3.842-1.198c.703-.592 1.291-1.458 1.617-2.757q.099-.753.1-1.531c0-6.627-5.371-12-11.999-12\"/></svg>",
     "simple-icons:gnuemacs": "<svg  width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M12 24C5.448 24 .118 18.617.118 12S5.448 0 12 0s11.882 5.383 11.882 12S18.552 24 12 24M12 .661C5.813.661.779 5.748.779 12S5.813 23.339 12 23.339S23.221 18.253 23.221 12S18.187.661 12 .661M8.03 20.197s.978.069 2.236-.042c.51-.045 2.444-.235 3.891-.552c0 0 1.764-.377 2.707-.725c.987-.364 1.524-.673 1.766-1.11c-.011-.09.074-.408-.381-.599c-1.164-.488-2.514-.4-5.185-.457c-2.962-.102-3.948-.598-4.472-.997c-.503-.405-.25-1.526 1.907-2.513c1.086-.526 5.345-1.496 5.345-1.496c-1.434-.709-4.109-1.955-4.659-2.224c-.482-.236-1.254-.591-1.421-1.021c-.19-.413.448-.768.804-.87c1.147-.331 2.766-.536 4.24-.56c.741-.012.861-.059.861-.059c1.022-.17 1.695-.869 1.414-1.976c-.252-1.13-1.579-1.795-2.84-1.565c-1.188.217-4.05 1.048-4.05 1.048c3.539-.031 4.131.028 4.395.398c.156.218-.071.518-1.015.672c-1.027.168-3.163.37-3.163.37c-2.049.122-3.492.13-3.925 1.046c-.283.599.302 1.129.558 1.46c1.082 1.204 2.646 1.853 3.652 2.331c.379.18 1.49.52 1.49.52c-3.265-.18-5.619.823-7.001 1.977c-1.562 1.445-.871 3.168 2.33 4.228c1.891.626 2.828.921 5.648.667c1.661-.09 1.923-.036 1.939.1c.023.192-1.845.669-2.355.816c-1.298.374-4.699 1.129-4.716 1.133\"/></svg>",
@@ -1948,88 +1955,10 @@ function updateLangInfoPanel(id) {
         ? `<a class="lang-name-link" href="${linkUrl}" target="_blank" rel="noopener">${headingText}</a>`
         : `<span class="lang-name">${headingText}</span>`;
 
-    // Update sample bar (separate from panel)
+    // Sample bar is no longer used - attribution moved to status div
     const sampleBar = document.getElementById('sample-bar');
-    if (info.sample && sampleBar) {
-        const s = info.sample;
-        // Parse org/repo from URL like https://github.com/org/repo/...
-        let repoLabel = 'Source';
-        if (s.link) {
-            try {
-                const url = new URL(s.link);
-                const parts = url.pathname.split('/').filter(Boolean);
-                if (parts.length >= 2) {
-                    repoLabel = `${parts[0]}/${parts[1]}`;
-                }
-            } catch (e) {
-                // Keep default
-            }
-        }
-        const gitIcon = icons['mdi:git'] || icons['mdi:source-branch'] || '';
-        const scalesIcon = icons['mdi:scale-balance'] || '';
-        const descText = s.description || 'Sample code';
-        sampleBar.innerHTML = `
-            <span class="sample-desc" title="${descText}">${descText}</span>
-            ${s.license ? `<span class="sample-license"><span class="sample-license-icon">${scalesIcon}</span>${s.license}</span>` : ''}
-            ${s.link ? `<a class="sample-link" href="${s.link}" target="_blank" rel="noopener"><span class="sample-icon">${gitIcon}</span>${repoLabel}</a>` : ''}
-        `;
-        sampleBar.classList.add('visible');
-    } else if (sampleBar) {
+    if (sampleBar) {
         sampleBar.classList.remove('visible');
-    }
-
-    // Build sources section (grammar + theme attribution)
-    let sourcesHtml = '';
-    const gitIcon = icons['mdi:git'] || icons['mdi:source-branch'] || '';
-    const scalesIcon = icons['mdi:scale-balance'] || '';
-    const paletteIcon = icons['mdi:palette'] || '';
-
-    if (info.grammarRepo || (selectedTheme && themeInfo[selectedTheme]?.source)) {
-        let grammarHtml = '';
-        let themeHtml = '';
-
-        if (info.grammarRepo) {
-            // Parse org/repo from URL
-            let repoLabel = 'Grammar';
-            try {
-                const url = new URL(info.grammarRepo);
-                const parts = url.pathname.split('/').filter(Boolean);
-                if (parts.length >= 2) {
-                    repoLabel = `${parts[0]}/${parts[1]}`;
-                }
-            } catch (e) {
-                // Keep default
-            }
-            grammarHtml = `<a class="source-link" href="${info.grammarRepo}" target="_blank" rel="noopener"><span class="source-icon">${gitIcon}</span>${repoLabel}</a>`;
-            if (info.grammarLicense) {
-                grammarHtml += `<span class="source-license"><span class="source-license-icon">${scalesIcon}</span>${info.grammarLicense}</span>`;
-            }
-        }
-
-        if (selectedTheme && themeInfo[selectedTheme]?.source) {
-            const themeSource = themeInfo[selectedTheme].source;
-            const themeName = themeInfo[selectedTheme].name;
-            // Parse domain or repo from URL
-            let sourceLabel = themeName;
-            try {
-                const url = new URL(themeSource);
-                if (url.hostname.includes('github.com')) {
-                    const parts = url.pathname.split('/').filter(Boolean);
-                    if (parts.length >= 2) {
-                        sourceLabel = `${parts[0]}/${parts[1]}`;
-                    }
-                } else {
-                    sourceLabel = url.hostname.replace('www.', '');
-                }
-            } catch (e) {
-                // Keep default
-            }
-            themeHtml = `<a class="source-link" href="${themeSource}" target="_blank" rel="noopener"><span class="source-icon">${paletteIcon}</span>${sourceLabel}</a>`;
-        }
-
-        if (grammarHtml || themeHtml) {
-            sourcesHtml = `<div class="card-sources">${grammarHtml}${themeHtml}</div>`;
-        }
     }
 
     panel.innerHTML = `
@@ -2039,9 +1968,11 @@ function updateLangInfoPanel(id) {
         ${attribution ? `<div class="card-attribution">${attribution}</div>` : ''}
         ${info.description ? `<div class="card-body"><p class="card-description">${info.description}</p></div>` : ''}
         ${info.trivia ? `<div class="card-trivia">${info.trivia}</div>` : ''}
-        ${sourcesHtml}
     `;
     panel.classList.add('visible');
+
+    // Update attribution in status bar
+    updateAttribution();
 }
 
 // Enter search mode
@@ -2620,6 +2551,9 @@ async function initialize() {
             selectLanguage(allLanguages[0]);
         }
 
+        // Initialize size comparison table
+        initSizeTable();
+
     } catch (error) {
         console.error('Failed to initialize:', error);
         document.getElementById('output').innerHTML = `<span class="error">Failed to initialize: ${error}</span>`;
@@ -2670,9 +2604,93 @@ async function doHighlight() {
 }
 
 function updateStatus(message, success) {
+    // Status is now used for attribution, not messages
+    // This function is kept for backwards compatibility but does nothing
+}
+
+function updateAttribution() {
     const status = document.getElementById('status');
-    status.textContent = message;
-    status.className = success ? 'status success' : 'status';
+    if (!status) return;
+
+    const info = languageInfo[selectedLang];
+    if (!info) {
+        status.innerHTML = '';
+        return;
+    }
+
+    // Get sample info
+    const sampleInfo = info.sample;
+
+    // Build attribution HTML
+    const gitIcon = icons['mdi:git'] || icons['mdi:source-branch'] || '';
+    const scalesIcon = icons['mdi:scale-balance'] || '';
+
+    let parts = [];
+
+    // Sample source link
+    if (sampleInfo && sampleInfo.link) {
+        let repoLabel = 'Source';
+        try {
+            const url = new URL(sampleInfo.link);
+            const pathParts = url.pathname.split('/').filter(Boolean);
+            if (pathParts.length >= 2) {
+                repoLabel = `${pathParts[0]}/${pathParts[1]}`;
+            }
+        } catch (e) {
+            // Keep default
+        }
+        parts.push(`<a href="${sampleInfo.link}" target="_blank" rel="noopener"><span class="attr-icon">${gitIcon}</span>${repoLabel}</a>`);
+    }
+
+    // Sample license
+    if (sampleInfo && sampleInfo.license) {
+        parts.push(`<span class="attr-license"><span class="attr-icon">${scalesIcon}</span>${sampleInfo.license}</span>`);
+    }
+
+    // Grammar source link
+    if (info.grammarRepo) {
+        let repoLabel = 'Grammar';
+        try {
+            const url = new URL(info.grammarRepo);
+            const pathParts = url.pathname.split('/').filter(Boolean);
+            if (pathParts.length >= 2) {
+                repoLabel = `${pathParts[0]}/${pathParts[1]}`;
+            }
+        } catch (e) {
+            // Keep default
+        }
+        parts.push(`<a href="${info.grammarRepo}" target="_blank" rel="noopener"><span class="attr-icon">${gitIcon}</span>${repoLabel}</a>`);
+    }
+
+    // Grammar license
+    if (info.grammarLicense) {
+        parts.push(`<span class="attr-license"><span class="attr-icon">${scalesIcon}</span>${info.grammarLicense}</span>`);
+    }
+
+    // Theme source
+    if (selectedTheme && themeInfo[selectedTheme]?.source) {
+        const paletteIcon = icons['mdi:palette'] || '';
+        const themeSource = themeInfo[selectedTheme].source;
+        const themeName = themeInfo[selectedTheme].name;
+        let sourceLabel = themeName;
+        try {
+            const url = new URL(themeSource);
+            if (url.hostname.includes('github.com')) {
+                const pathParts = url.pathname.split('/').filter(Boolean);
+                if (pathParts.length >= 2) {
+                    sourceLabel = `${pathParts[0]}/${pathParts[1]}`;
+                }
+            } else {
+                sourceLabel = url.hostname.replace('www.', '');
+            }
+        } catch (e) {
+            // Keep default
+        }
+        parts.push(`<a href="${themeSource}" target="_blank" rel="noopener"><span class="attr-icon">${paletteIcon}</span>${sourceLabel}</a>`);
+    }
+
+    status.innerHTML = parts.join('<span class="attr-separator">·</span>');
+    status.className = 'status attribution';
 }
 
 document.getElementById('source').addEventListener('input', doHighlight);
@@ -2754,6 +2772,165 @@ if (randomBtn) {
         selectLanguage(randomLang);
         selectTheme(randomTheme);
     });
+}
+
+// ============================================================================
+// Size Comparison Table
+// ============================================================================
+
+let currentFormat = 'brotli';
+let currentSort = 'name';
+let sizeData = [];
+let filteredData = [];
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+}
+
+function formatCLines(lines) {
+    if (lines === 0) return '0';
+    if (lines >= 1000000) {
+        const m = lines / 1000000;
+        return (m % 1 === 0) ? m.toFixed(0) + 'M' : m.toFixed(1) + 'M';
+    }
+    if (lines >= 1000) {
+        const k = lines / 1000;
+        return (k % 1 === 0) ? k.toFixed(0) + 'K' : k.toFixed(1) + 'K';
+    }
+    return lines.toString();
+}
+
+function getSizeField() {
+    return currentFormat === 'brotli' ? 'size_brotli' :
+           currentFormat === 'gzip' ? 'size_gzip' : 'size_bytes';
+}
+
+function renderSizeTable() {
+    const tbody = document.getElementById('size-table-body');
+    if (!tbody) return;
+
+    const sizeField = getSizeField();
+
+    // Calculate stats
+    const sizes = filteredData.map(d => d[sizeField]);
+    if (sizes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem; opacity: 0.5;">No matching languages</td></tr>';
+        document.getElementById('size-min').textContent = '-';
+        document.getElementById('size-avg').textContent = '-';
+        document.getElementById('size-max').textContent = '-';
+        document.getElementById('size-total').textContent = '-';
+        return;
+    }
+
+    const min = Math.min(...sizes);
+    const max = Math.max(...sizes);
+    const avg = sizes.reduce((a, b) => a + b, 0) / sizes.length;
+    const total = sizes.reduce((a, b) => a + b, 0);
+
+    // Update stats display
+    document.getElementById('size-min').textContent = formatBytes(min);
+    document.getElementById('size-avg').textContent = formatBytes(avg);
+    document.getElementById('size-max').textContent = formatBytes(max);
+    document.getElementById('size-total').textContent = formatBytes(total);
+
+    // Render rows
+    tbody.innerHTML = filteredData.map(item => {
+        const size = item[sizeField];
+        const percent = max === min ? 50 : ((size - min) / (max - min)) * 100;
+        const info = languageInfo[item.language] || { name: item.language, icon: '' };
+        const iconSvg = getIconSvg(item.language);
+
+        const cLines = item.c_lines || 0;
+        const formattedCLines = formatCLines(cLines);
+
+        return `
+            <tr>
+                <td class="col-language">
+                    <span class="lang-icon">${iconSvg}</span>
+                    <span class="lang-name">${info.name || item.language}</span>
+                </td>
+                <td class="col-c-lines">${formattedCLines}</td>
+                <td class="col-size">${formatBytes(size)}</td>
+                <td class="col-bar">
+                    <div class="size-bar-container">
+                        <div class="size-bar" style="width: ${percent}%"></div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function sortAndRenderSizeTable() {
+    const sizeField = getSizeField();
+
+    if (currentSort === 'name') {
+        filteredData.sort((a, b) => {
+            const nameA = (languageInfo[a.language] || {}).name || a.language;
+            const nameB = (languageInfo[b.language] || {}).name || b.language;
+            return nameA.localeCompare(nameB);
+        });
+    } else {
+        filteredData.sort((a, b) => b[sizeField] - a[sizeField]);
+    }
+
+    renderSizeTable();
+}
+
+function initSizeTable() {
+    // Check if size table exists on the page
+    if (!document.getElementById('size-table')) return;
+
+    // Load size data from registry (already loaded in initialize())
+    if (!registry || !registry.entries) {
+        console.warn('Registry not loaded yet, skipping size table initialization');
+        return;
+    }
+
+    sizeData = registry.entries;
+    filteredData = [...sizeData];
+
+    // Attach event listeners for format selector
+    document.querySelectorAll('.format-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+            e.target.closest('.format-btn').classList.add('active');
+            currentFormat = e.target.closest('.format-btn').dataset.format;
+            sortAndRenderSizeTable();
+        });
+    });
+
+    // Attach event listeners for sort buttons
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            currentSort = e.target.dataset.sort;
+            sortAndRenderSizeTable();
+        });
+    });
+
+    // Attach event listener for search input
+    const searchInput = document.getElementById('size-table-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            filteredData = sizeData.filter(item => {
+                const info = languageInfo[item.language] || { name: item.language };
+                const name = info.name || item.language;
+                return name.toLowerCase().includes(query) ||
+                       item.language.toLowerCase().includes(query);
+            });
+            sortAndRenderSizeTable();
+        });
+    }
+
+    // Initial render
+    sortAndRenderSizeTable();
 }
 
 initialize();
