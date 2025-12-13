@@ -33,6 +33,7 @@ struct IndexHtmlTemplate<'a> {
     theme_swatches: &'a str,
     theme_css_link: &'a str,
     code: &'a CodeBlocks,
+    language_count: usize,
 }
 
 /// Pre-highlighted code blocks for the index page
@@ -280,7 +281,7 @@ pub fn serve(crates_dir: &Utf8Path, addr: &str, port: Option<u16>, dev: bool) {
 
     // Step 4: Generate index.html from template
     step("Generating index.html", || {
-        generate_index_html(&demo_dir, &icons)
+        generate_index_html(&demo_dir, &icons, &registry)
     });
 
     // Step 4b: Generate IIFE demo HTML files
@@ -368,7 +369,7 @@ pub fn build_static_site(crates_dir: &Utf8Path, dev: bool) -> Result<(), String>
 
     step("Generating theme CSS", || generate_theme_css(&demo_dir));
     step("Generating index.html", || {
-        generate_index_html(&demo_dir, &icons)
+        generate_index_html(&demo_dir, &icons, &registry)
     });
     step("Generating IIFE demo HTML", || {
         generate_iife_demo_html(&demo_dir)
@@ -420,7 +421,7 @@ pub fn generate_registry_and_assets(
     step("Generating theme CSS", || generate_theme_css(demo_dir_path));
 
     step("Generating index.html", || {
-        generate_index_html(demo_dir_path, &icons)
+        generate_index_html(demo_dir_path, &icons, &registry)
     });
 
     step("Generating IIFE demo HTML", || {
@@ -827,19 +828,25 @@ let handler = GraphicalReportHandler::new()
     }
 }
 
-fn generate_index_html(demo_dir: &Path, icons: &BTreeMap<String, String>) -> Result<(), String> {
+fn generate_index_html(
+    demo_dir: &Path,
+    icons: &BTreeMap<String, String>,
+    registry: &Registry,
+) -> Result<(), String> {
     let output_path = demo_dir.join("index.html");
 
     // Generate theme swatches
     let swatches_html = generate_theme_swatches();
     let theme_css_link = "\n    <link rel=\"stylesheet\" href=\"/pkg/themes.generated.css\">";
     let code_blocks = generate_code_blocks();
+    let language_count = registry.grammars.len();
 
     let template = IndexHtmlTemplate {
         icons,
         theme_swatches: &swatches_html,
         theme_css_link,
         code: &code_blocks,
+        language_count,
     };
 
     let html = template.render_once().map_err(|e| e.to_string())?;

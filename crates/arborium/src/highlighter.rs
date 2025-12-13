@@ -432,7 +432,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature = "lang-rust", feature = "ansi"))]
+    #[cfg(feature = "lang-rust")]
     fn test_ansi_highlighting() {
         let theme = builtin::catppuccin_mocha().clone();
         let mut highlighter = AnsiHighlighter::new(theme);
@@ -455,7 +455,7 @@ fn main() {
     }
 
     #[test]
-    #[cfg(all(feature = "lang-rust", feature = "ansi"))]
+    #[cfg(feature = "lang-rust")]
     fn test_ansi_with_options() {
         let theme = builtin::catppuccin_mocha().clone();
         let config = crate::Config::default();
@@ -485,7 +485,7 @@ fn main() {
     }
 
     #[test]
-    #[cfg(all(feature = "lang-rust", feature = "ansi"))]
+    #[cfg(feature = "lang-rust")]
     fn test_theme_switching() {
         let theme1 = builtin::catppuccin_mocha().clone();
         let mut highlighter = AnsiHighlighter::new(theme1);
