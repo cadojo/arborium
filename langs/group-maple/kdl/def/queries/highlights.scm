@@ -1,50 +1,42 @@
-; Types
+; Node names
 
-(node (identifier) @type)
+(base_node name: (string) @type)
+
+; Type annotations
 
 (type) @type
-
 (annotation_type) @type.builtin
 
 ; Properties
 
-(prop (identifier) @property)
+(prop key: (string) @property)
 
-; Variables
+; Identifiers
 
-(identifier) @variable
-
-; Operators
-[
- "="
- "+"
- "-"
-] @operator
+(identifier_string) @variable
 
 ; Literals
 
-(string) @string
+(quoted_string) @string
+(raw_string) @string
 
 (escape) @string.escape
 
 (number) @number
-
-(number (decimal) @float)
-(number (exponent) @float)
+(keyword_number) @number.special
 
 (boolean) @boolean
 
-"null" @constant.builtin
+"#null" @constant.builtin
 
-; Punctuation
+; Operators / punctuation
+
+"=" @operator
 
 ["{" "}"] @punctuation.bracket
-
 ["(" ")"] @punctuation.bracket
 
-[
-  ";"
-] @punctuation.delimiter
+";" @punctuation.delimiter
 
 ; Comments
 
@@ -53,6 +45,5 @@
   (multi_line_comment)
 ] @comment @spell
 
-(node (node_comment) (#set! "priority" 105)) @comment
-(node (node_field (node_field_comment) (#set! "priority" 105)) @comment)
-(node_children (node_children_comment) (#set! "priority" 105)) @comment
+"/-" @comment
+
