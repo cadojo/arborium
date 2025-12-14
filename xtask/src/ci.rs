@@ -453,10 +453,11 @@ echo "Version: $VERSION (release: $IS_RELEASE)""#,
                 // Upload generated files for downstream jobs
                 // Note: no root Cargo.toml/lock - each crate is standalone
                 // Includes xtask binary so downstream jobs don't need to rebuild it.
+                // Includes version.json so publish jobs know the release version.
                 Step::uses("Upload generate output", "actions/upload-artifact@v4")
                     .with_inputs([
                         ("name", "generate-output"),
-                        ("path", "crates/\nlangs/\nxtask/target/release/xtask"),
+                        ("path", "crates/\nlangs/\nxtask/target/release/xtask\nversion.json"),
                         ("retention-days", "1"),
                     ]),
             ]),
