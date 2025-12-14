@@ -1,58 +1,69 @@
-; Types
+; --------------------------------------------------------------------------------
+; Node + structure
+; --------------------------------------------------------------------------------
 
-(node (identifier) @type)
+(node_no_terminator
+  (slashdash)? @comment
+  name: (string) @type.definition)
+
+((node_no_terminator (slashdash)) @comment
+ (#set! "priority" 105))
+
+(node_children) @scope
+
+; Allow top-level identifiers (nodes without string quoting) to appear as types
+(identifier_string) @variable
+
+; --------------------------------------------------------------------------------
+; Properties / arguments
+; --------------------------------------------------------------------------------
+
+(prop key: (string) @property)
+(node_prop_or_arg (value (type) @type))
+
+; --------------------------------------------------------------------------------
+; Type annotations
+; --------------------------------------------------------------------------------
 
 (type) @type
-
 (annotation_type) @type.builtin
 
-; Properties
-
-(prop (identifier) @property)
-
-; Variables
-
-(identifier) @variable
-
-; Operators
-[
- "="
- "+"
- "-"
-] @operator
-
+; --------------------------------------------------------------------------------
 ; Literals
+; --------------------------------------------------------------------------------
 
-(string) @string
-
+(quoted_string) @string
+(raw_string) @string
 (escape) @string.escape
+(ws_escape) @string.escape
 
+[(boolean) (keyword)] @constant.builtin
+(keyword_number) @number.special
 (number) @number
 
-(number (decimal) @float)
-(number (exponent) @float)
+; Hash keywords (#true/#false/#null/#inf/etc)
+(keyword) @keyword
 
-(boolean) @boolean
+; --------------------------------------------------------------------------------
+; Punctuation / operators
+; --------------------------------------------------------------------------------
 
-"null" @constant.builtin
-
-; Punctuation
-
+"=" @operator
 ["{" "}"] @punctuation.bracket
-
 ["(" ")"] @punctuation.bracket
+";" @punctuation.delimiter
 
-[
-  ";"
-] @punctuation.delimiter
-
-; Comments
+; --------------------------------------------------------------------------------
+; Comments & directives
+; --------------------------------------------------------------------------------
 
 [
   (single_line_comment)
   (multi_line_comment)
 ] @comment @spell
 
-(node (node_comment) (#set! "priority" 105)) @comment
-(node (node_field (node_field_comment) (#set! "priority" 105)) @comment)
-(node_children (node_children_comment) (#set! "priority" 105)) @comment
+; slashdash directives behave like comments in KDL, so capture the node.
+(slashdash) @comment
+
+; Version marker (/- kdl-version ...)
+(version_marker) @keyword.directive
