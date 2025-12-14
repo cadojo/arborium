@@ -114,7 +114,6 @@ module.exports = grammar({
     // Tree-sitter doesn't allow non-start rules that match the empty string,
     // so we model "possibly empty nodes" as `optional(nodes)` at call sites.
     nodes: $ => seq(
-      repeat($._line_space),
       repeat1(seq(
         $.node,
         repeat($._line_space),
