@@ -60,7 +60,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with: 
           name: generate-output
-          path: "crates/\nlangs/\nxtask/target/release/xtask"
+          path: "crates/\nlangs/\nxtask/target/release/xtask\nversion.json"
           retention-days: "1"
 
 

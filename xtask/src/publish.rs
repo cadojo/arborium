@@ -491,7 +491,11 @@ pub fn publish_npm(
 }
 
 fn ensure_release_version(version: &str) -> Result<()> {
-    if version.ends_with("-dev") || version.ends_with("-test") {
+    // Reject the dev version (0.0.0) or versions with dev/test suffixes
+    if version == version_store::DEV_VERSION
+        || version.ends_with("-dev")
+        || version.ends_with("-test")
+    {
         return Err(miette::miette!(
             "Refusing to publish development version {} - run `cargo xtask gen --version <x.y.z>` first",
             version
