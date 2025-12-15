@@ -12,6 +12,8 @@ homepage = "https://github.com/bearcove/arborium"
 documentation = "https://docs.rs/arborium-theme"
 keywords = ["syntax-highlighting", "themes", "tree-sitter"]
 categories = ["text-processing"]
+# Include generated files that are in .gitignore
+include = ["src/**/*.rs", "themes/**/*.toml"]
 
 [dependencies]
 toml = { version = "0.8", optional = true }
