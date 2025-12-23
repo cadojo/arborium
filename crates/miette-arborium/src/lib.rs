@@ -206,9 +206,18 @@ impl miette::highlighters::HighlighterState for MietteHighlighterState<'_> {
             let rel_start = span_start.saturating_sub(self.line_start);
             let rel_end = (span_end - self.line_start).min(line.len());
 
+            // Skip spans we've already passed
+            if rel_end <= current_pos {
+                continue;
+            }
+
+            // Clip span start to current position (handle overlapping spans)
+            let rel_start = rel_start.max(current_pos);
+
             // Add unhighlighted text before this span
-            if current_pos < rel_start && rel_start <= line.len() {
+            if current_pos < rel_start {
                 result.push(Style::new().style(&line[current_pos..rel_start]));
+                current_pos = rel_start;
             }
 
             // Add the highlighted span

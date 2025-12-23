@@ -74,6 +74,7 @@ fn process_data(items: &[Item]) -> Result<Summary, Error> {
     Ok(Summary { counts, total: items.len() })
 }
 
+
 struct Summary {
     counts: HashMap<String, usize>,
     total: usize,
@@ -88,6 +89,24 @@ struct Summary {
     };
     println!("Rust\n");
     print_diagnostic(&rust_error, &handler);
+
+    // Rust example with derive macro
+    let rust_derive_code = r#"use facet::Facet;
+
+#[derive(Facet)]
+struct FooBar {
+    foo: u32,
+}"#;
+
+    let rust_derive_error = CodeError {
+        message: "Rust derive error".into(),
+        src: NamedSource::new("foobar.rs", rust_derive_code.to_string()),
+        span: (28, 5).into(), // "Facet" in derive
+        label: "cannot find derive macro `Facet` in this scope".into(),
+        help: Some("consider importing: use facet::Facet;".into()),
+    };
+    println!("\nRust (derive macro)\n");
+    print_diagnostic(&rust_derive_error, &handler);
 
     // Python example
     let python_code = r#"import asyncio
