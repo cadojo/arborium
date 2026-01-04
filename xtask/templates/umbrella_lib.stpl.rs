@@ -191,6 +191,35 @@ pub fn detect_language(path: &str) -> Option<&'static str> {
     })
 }
 
+/// Get the tree-sitter [`Language`] for a given language name.
+///
+/// Returns the `Language` struct instance if the language is enabled via feature flags,
+/// or `None` if the language is not recognized or not enabled.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use arborium::get_language;
+///
+/// if let Some(lang) = get_language("rust") {
+///     // Use the Language instance...
+/// }
+/// ```
+///
+/// # Note
+///
+/// This function only returns languages that are enabled via feature flags.
+/// Use [`detect_language`] to map file paths to language names first.
+pub fn get_language(name: &str) -> Option<tree_sitter::Language> {
+    match name {
+<% for (_, grammar_id) in grammars { %>
+        #[cfg(feature = "lang-<%= grammar_id %>")]
+        "<%= grammar_id %>" => Some(lang_<%= grammar_id.replace('-', "_") %>::language().into()),
+<% } %>
+        _ => None,
+    }
+}
+
 // =============================================================================
 // Language grammar re-exports based on enabled features.
 // Each module provides:
